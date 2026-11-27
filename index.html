@@ -294,7 +294,9 @@ h1{font-weight:700}.b,.opl{font-weight:600}
 .opl{box-shadow:none!important;border-radius:10px}
 .ibtn{border-radius:10px}
 .tray,.who{background:var(--surface)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important;border:1px solid var(--line);border-radius:14px}
-.face{background:#fbf8f3!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)!important;border-radius:8px}
+.face{background:#fbf8f3!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)!important;border-radius:6px}
+/* solid die: three inner planes fill the gaps at the rounded edges */
+.core{position:absolute;inset:.5px;background:#e6ddd0;border-radius:2px}.core.cy{transform:rotateY(90deg)}.core.cz{transform:rotateX(90deg)}
 .face b.k{background:#2a1d15!important}.dshadow{display:none}
 .tot{background:var(--acc);color:#fff;box-shadow:none;font-size:13px;font-weight:700}
 .deed{box-shadow:none!important;border-radius:14px}
@@ -914,7 +916,7 @@ const ROT={1:[0,0],6:[0,180],3:[0,-90],4:[0,90],5:[-90,0],2:[90,0]};
 const FACEN=[1,6,3,4,5,2];
 const pipsOf=n=>[...Array(9)].map((_,k)=>`<b class="${PIPS[n].includes(k)?'k':''}"></b>`).join('');
 const TRAY=document.createElement('div');TRAY.className='tray';TRAY.id='tray';
-TRAY.innerHTML=[0,1].map(()=>`<span class="dwrap"><span class="cube">${FACEN.map((n,k)=>`<span class="face f${k}">${pipsOf(n)}</span>`).join('')}</span><span class="dshadow"></span></span>`).join('')+'<span class="tot" hidden></span>';
+TRAY.innerHTML=[0,1].map(()=>`<span class="dwrap"><span class="cube"><i class="core"></i><i class="core cy"></i><i class="core cz"></i>${FACEN.map((n,k)=>`<span class="face f${k}">${pipsOf(n)}</span>`).join('')}</span><span class="dshadow"></span></span>`).join('')+'<span class="tot" hidden></span>';
 let spins=[0,0],lastDice='';
 function setDice(d,spin){if(spin&&!still){spins=spins.map(x=>x+1+Math.floor(Math.random()*2))}
 TRAY.querySelectorAll('.cube').forEach((c,k)=>{const r=ROT[d[k]]||[0,0],t=spins[k]*360;c.style.transform=`rotateZ(${(k?-1:1)*((spins[k]%3)-1)*6}deg) rotateX(${r[0]+t}deg) rotateY(${r[1]+(k?-t:t)}deg)`});
