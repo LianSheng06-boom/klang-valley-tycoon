@@ -2,7 +2,7 @@
 
 A property-trading board game set in the Klang Valley, from Kajang satay to the Petronas Towers. Buy places, build houses and condos, and get rich, without one unlucky roll knocking you out of the game.
 
-**Play:** open `index.html` in a browser, or play the hosted version on GitHub Pages.
+**Play now:** https://liansheng06-boom.github.io/klang-valley-tycoon/ (or open `index.html` in a browser).
 
 ## How it plays
 
