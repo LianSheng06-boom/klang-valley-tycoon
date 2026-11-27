@@ -11,7 +11,8 @@ Everything is played online through the game server (`server.js`). See **Online 
 - Roll the 3D dice, buy the places you land on, collect full colour sets and build houses, then condos.
 - Skip a place and it goes to **auction**: everyone bids in turn, and passing drops you out. Online, a bidder who walks away is passed after 20 seconds.
 - **Mortgage** a place for half its price (no rent until you pay it back plus 10%), and sell houses back at half price. Open a place's card on your turn to find these buttons.
-- Point at a tile to see its card. On a phone, tap it.
+- The dice, whose turn it is and the latest news sit in the middle of the board. **My properties** on the right lists your places; tap one to open its card. Point at a tile to see its card too (on a phone, tap it).
+- **Share this game** on the right keeps the invite link handy during the game.
 - Trade on your turn: Trades → Create, pick a player, tap places and set cash on each side. Bots answer straight away; friends get an Accept / Decline pop-up.
 - Online rooms have a chat. Anyone who joins late sees the recent messages.
 - Give up from the ☰ menu on your turn; your places go back to the bank.
