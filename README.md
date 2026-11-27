@@ -2,12 +2,12 @@
 
 A property-trading board game set in the Klang Valley, from Kajang satay to the Petronas Towers. Buy places, build houses and condos, and get rich, without one unlucky roll knocking you out of the game.
 
-**Play now:** https://liansheng06-boom.github.io/klang-valley-tycoon/ (or open `index.html` in a browser).
+Everything is played online through the game server (`server.js`). See **Online rooms** below to host it.
 
 ## How it plays
 
-- The home page has **Play** (jump into an open public room, or open one), **All rooms** (browse public rooms by rules), **Create a private game**, and **Play on this device**.
-- 2–6 players, on one screen (pass-and-play) or online, with bots filling empty seats. Tap your token to change it.
+- The home page has **Play** (jump into an open public room, or open one), **All rooms** (browse public rooms by rules), and **Create a private game**.
+- 2–6 players in an online room, with bots filling empty seats, so you can also play alone against bots. Tap your token to change it.
 - Roll the 3D dice, buy the places you land on, collect full colour sets and build houses, then condos.
 - Skip a place and it goes to **auction**: everyone bids in turn, and passing drops you out. Online, a bidder who walks away is passed after 20 seconds.
 - **Mortgage** a place for half its price (no rent until you pay it back plus 10%), and sell houses back at half price. Open a place's card on your turn to find these buttons.
@@ -19,7 +19,7 @@ A property-trading board game set in the Klang Valley, from Kajang satay to the 
 
 ## Game rules
 
-Set these under New game, or in the online room before the game starts:
+The host sets these in the room before the game starts:
 
 | Rule | Default |
 |---|---|
@@ -43,16 +43,16 @@ Set these under New game, or in the online room before the game starts:
 | Tabung | Taxes and fines go into a pool paid to the poorest player each round |
 | 20 rounds | The richest net worth wins, so games stay around 40 minutes |
 
-Every rule can be switched off under ☰ → New game. The Balance lab (☰ menu) plays hundreds of bot games under classic and house rules so you can compare them.
+The host can switch every rule off in the room. The Balance lab (☰ menu) plays hundreds of bot games under classic and house rules so you can compare them.
 
 ## Online rooms
 
-`server.js` is a small Node server that serves the game and keeps online rooms in sync over a WebSocket. Press **Play online**, create a room and send friends the invite link. They don't need an account.
+`server.js` is a small Node server that serves the game and keeps online rooms in sync over a WebSocket. Press **Play** or **Create a private game** and send friends the invite link. They don't need an account.
 
 - **Host it on Render:** create a Blueprint from this repo. Render reads `render.yaml` and uses the free plan.
 - **Run it yourself:** `npm install`, then `npm start`, then open http://localhost:5177.
 
-Rooms are kept in memory. If the server restarts, or a free host puts it to sleep, the players' browsers send the game back when they reconnect, so a game in progress carries on. The GitHub Pages copy has no server, so it is pass-and-play with bots only.
+Rooms are kept in memory. If the server restarts, or a free host puts it to sleep, the players' browsers send the game back when they reconnect, so a game in progress carries on. The GitHub Pages copy has no game server, so nothing can be played there; use the server's address instead.
 
 ## About
 

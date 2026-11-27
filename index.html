@@ -425,7 +425,7 @@ button.brand{border:0;background:none;padding:0;cursor:pointer;text-align:left;c
 .hm-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px;display:grid;gap:12px;box-shadow:0 18px 40px var(--shadow);animation:hudIn .3s cubic-bezier(.3,.8,.35,1) both}
 .hm-card[hidden]{display:none}
 .b.big{min-height:56px;font-size:19px;justify-content:center}
-.hm-row{display:flex;flex-wrap:wrap;gap:8px}.hm-row .b{flex:1 1 180px;justify-content:center;padding:0 12px}.hm-row .b[hidden]{display:none}
+.hm-row{display:flex;flex-wrap:wrap;gap:8px}.hm-row .b{flex:1 1 180px;justify-content:center;padding:0 12px}.hm-card .b[hidden]{display:none}#hcont{justify-content:center}
 .hm-bar{display:flex;align-items:center;gap:8px}.hm-bar .sp{flex:1}
 .fchips{display:flex;flex-wrap:wrap;gap:6px}
 .fchips button{font:600 12.5px Fredoka,sans-serif;border:1px solid var(--line);background:var(--tile);color:var(--mute);border-radius:20px;padding:5px 12px;cursor:pointer}
@@ -437,8 +437,6 @@ button.brand{border:0;background:none;padding:0;cursor:pointer;text-align:left;c
 .rdots{display:flex;gap:4px}.rdots i{width:10px;height:10px;border-radius:50%;border:2px solid var(--line)}.rdots i.h{background:var(--acc);border-color:var(--acc)}.rdots i.bt{background:var(--hi);border-color:var(--hi)}
 .rtags{grid-column:1;display:flex;gap:6px;flex-wrap:wrap}.rtags .chip{font-size:11.5px;padding:1px 8px 1px 5px}.rtags .chip svg.i{width:13px;height:13px}
 .rjoin{grid-row:1/span 2;grid-column:2;font:600 14px Fredoka,sans-serif;color:var(--acc)}.room:disabled .rjoin{color:var(--mute)}
-.hm-how{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-.hm-how h3{grid-column:1/-1;margin:6px 4px 0}
 .hm-step{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;display:grid;gap:4px;font-size:13px;color:var(--mute)}
 .hm-step b{color:var(--ink);font:600 14.5px Fredoka,sans-serif;display:flex;align-items:center;gap:8px}
 .hm-step b svg.i{color:var(--acc)}
@@ -503,19 +501,12 @@ button.brand{border:0;background:none;padding:0;cursor:pointer;text-align:left;c
 <label class="fld"><span>Your nickname</span><input id="hnick" maxlength="16" autocomplete="nickname" placeholder="e.g. Ah Boy"></label>
 <button class="b p big" id="hplay"><span data-ic="play"></span>Play</button>
 <div class="hm-row"><button class="b" id="hrooms"><span data-ic="list"></span>All rooms</button><button class="b" id="hpriv"><span data-ic="key"></span>Create a private game</button></div>
-<div class="hm-row"><button class="b" id="hlocal"><span data-ic="user"></span>Play on this device</button><button class="b" id="hcont" hidden><span data-ic="next"></span>Continue game</button></div>
+<button class="b" id="hcont" hidden><span data-ic="next"></span>Back to your game</button>
 <p class="note" id="hnote"></p></div>
 <div class="hm-card" id="hmRooms" hidden>
 <div class="hm-bar"><button class="b sm" id="hback"><span data-ic="back"></span>Back</button><span class="sp"></span><button class="ibtn" id="hrefresh" aria-label="Refresh" data-ic="refresh"></button><button class="b sm p" id="hnew"><span data-ic="plus"></span>New room</button></div>
 <div class="fchips" id="rfil" role="group" aria-label="Show only"></div>
 <div class="rooms" id="rlist"></div></div>
-<section class="hm-how"><h3>How to play</h3>
-<div class="hm-step"><b><span data-ic="dice"></span>Roll and move</b>Roll two dice and move round the board. Doubles roll again.</div>
-<div class="hm-step"><b><span data-ic="key"></span>Buy places</b>Land on a place for sale and buy it, or let everyone bid for it.</div>
-<div class="hm-step"><b><span data-ic="coins"></span>Collect rent</b>Anyone who lands on your place pays you rent.</div>
-<div class="hm-step"><b><span data-ic="build"></span>Build up</b>Own a full colour set to build houses, then a condo.</div>
-<div class="hm-step"><b><span data-ic="swap"></span>Trade</b>Swap places and cash with other players on your turn.</div>
-<div class="hm-step"><b><span data-ic="trophy"></span>Win</b>Be the last one standing, or the richest after 20 rounds.</div></section>
 <p class="hm-foot">No sign-up and no ads. Your nickname stays on this device. Place names are real Klang Valley places; prices and cards are made up.</p>
 </div></section>
 
@@ -1040,7 +1031,7 @@ async function tumble(g){if(still)return;setDice(S.dice,true);await wait(950)}
 async function animRoll(g){busy=true;clearTimeout(autoT);const n=preMove(S);rolled=false;render();await tumble(g);if(g!==gen)return;rolled=true;render();await wait(n?240:500);
 const k0=S.cur,from=P(S).pos;for(let k=0;k<n;k++)moveOne(S,k0);if(n)await glide(k0,from,n,P(S).bot?85:105,()=>{if(g!==gen)return;S.focus=P(S).pos;render(true)});
 if(g!==gen)return;if(n){await arrive(P(S).pos,g);if(g!==gen)return;postMove(S)}else S.phase='end'}
-function schedule(){if(!S||S.over||S.phase==='auction')return;if(online&&online.playing){if(!P(S).bot||busy||animating||botPending||!botRunner())return;botPending=true;const g=gen;setTimeout(()=>{botPending=false;if(g===gen&&online&&online.playing&&!busy&&!animating&&P(S).bot&&botRunner())runBot()},700);return}if(!P(S).bot)return;const g=gen;setTimeout(()=>{if(g===gen&&!busy)runBot()},700)}
+function schedule(){if(!S||S.over||S.phase==='auction')return;if(online&&online.playing){if(!P(S).bot||busy||animating||botPending||!botRunner())return;botPending=true;const g=gen;setTimeout(()=>{botPending=false;if(g===gen&&online&&online.playing&&!busy&&!animating&&P(S).bot&&botRunner())runBot()},700);return}}
 async function runBot(){const g=gen,pi=S.cur,p=P(S);if(S.phase==='auction'||S.over)return;busy=true;if(S.phase==='roll'&&!S.dbl){if(p.jail&&p.cash>300&&!p.debt)payJail(S);botDeals(S,pi);botBuild(S,pi)}let k=0;
 while(S.phase==='roll'&&!p.out&&!S.over&&k++<6){await animRoll(g);if(g!==gen)return;render();await wait(500);if(S.phase==='auction'){busy=false;render();save();return}}
 if(!S.over){botBuild(S,pi);render();await wait(500);if(g!==gen)return;rolled=false;endTurn(S)}busy=false;render();save();schedule()}
@@ -1118,7 +1109,7 @@ function ruleRows(r,attr,dis){return GRULES.map(x=>`<label class="sw"><span clas
 function start(s){gen++;busy=false;rolled=false;stamp=null;cheered=!!s.over;clearTimeout(autoT);S=fixState(s);seen=S.ln||0;prevCash=[];$('players').innerHTML='';$('toks').innerHTML='';tileKeys=[];feedLn=-1;render(true);save();schedule()}
 const SKY=cityScene();
 document.querySelectorAll('[data-ic]').forEach(e=>e.insertAdjacentHTML('afterbegin',I(e.dataset.ic)));
-$('tools').innerHTML=`<button class="opl" id="opl" data-open="online">${I('globe')}<span>Play online</span></button><div class="mwrap"><button class="ibtn" id="mbtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div class="menu" id="menu" hidden>${`<button data-home>${I('home')}Home</button>`+[['setup','plus','New game'],['rules','book','Rules'],['lab','chart','Balance lab'],['quit','flag','Give up']].map(([k,ic,l])=>`<button data-open="${k}">${I(ic)}${l}</button>`).join('')}</div></div>`;
+$('tools').innerHTML=`<button class="opl" id="opl" data-open="online">${I('globe')}<span>Play online</span></button><div class="mwrap"><button class="ibtn" id="mbtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div class="menu" id="menu" hidden>${`<button data-home>${I('home')}Home</button>`+[['rules','book','Rules'],['lab','chart','Balance lab'],['quit','flag','Give up']].map(([k,ic,l])=>`<button data-open="${k}">${I(ic)}${l}</button>`).join('')}</div></div>`;
 $('mbtn').onclick=e=>{e.stopPropagation();const m=$('menu');m.hidden=!m.hidden;$('mbtn').setAttribute('aria-expanded',String(!m.hidden))};
 document.addEventListener('click',()=>{const m=$('menu');if(m&&!m.hidden){m.hidden=true;$('mbtn').setAttribute('aria-expanded','false')}});
 const RIC={flat:'chart',salary:'wallet',cap:'shield',loan:'bank',tabung:'piggy',limit:'clock'};
@@ -1215,7 +1206,7 @@ let confirmSolo=false;
 async function backToLobby(){if(!online||online.host!==CAP.me)return;const o=online;try{await o.ref.set(Object.assign(base(),{status:'lobby',state:null,rev:(o.rev||0)+1,by:CAP.me,at:Date.now()}))}catch(e){toastMsg('Could not reset the room.')}}
 async function leaveOnline(silent){const o=online;if(!o)return;online=null;gen++;busy=false;try{o.unsub&&o.unsub()}catch(e){}try{o.room&&o.room.leave()}catch(e){}
 try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
-if(o.playing||!silent){S=loadLocal();seen=S.ln||0;prevCash=[];pp=-1;$('players').innerHTML='';$('toks').innerHTML='';tileKeys=[];feedLn=-1;render(true);schedule()}renderOnline()}
+if(o.playing||!silent){S=loadLocal();seen=S.ln||0;prevCash=[];pp=-1;$('players').innerHTML='';$('toks').innerHTML='';tileKeys=[];feedLn=-1;render(true)}renderOnline();if(!silent)showHome()}
 function loadLocal(){try{const j=JSON.parse(localStorage.getItem('kvt-7')||'null');if(j&&j.players)return fixState(j)}catch(e){}const s=newGame(SEATS4,KV);return s}
 const kindLabel={human:'Player',open:'Open seat',bot:'Bot',empty:'Empty'};
 function renderOnline(){renderChat();const el=$('online');if(!el)return;const chip=$('ochip');
@@ -1246,7 +1237,7 @@ else if(t.id==='ojoin'){const n=nick(),c=(($('ocode')||{}).value||'').trim().toL
 try{await joinRoom(c,n)}catch(err){onlineMsg=err&&err.code==='missing'?'No room with that code.':err&&err.code==='invalid_argument'?'You need Editor access to this game to join. Ask the owner to invite you.':err&&err.code==='offline'?'Lost the connection. Try again in a moment.':'Could not join right now. Try again.';renderOnline()}}
 else if(t.id==='ocopy'){const txt=`Jom main Klang Valley Tycoon! Open ${shareURL()}#g-${online.code} — room code ${online.code.toUpperCase()}`;try{await navigator.clipboard.writeText(txt);toastMsg('Invite copied.')}catch(err){toastMsg('Copy the link shown below the code.')}}
 else if(t.id==='ostart')startOnline();
-else if(t.id==='oleave'){if(online&&online.host===CAP.me&&online.status==='lobby'){const r=online.ref;await leaveOnline(false);try{await r.delete()}catch(_){}}else leaveOnline(false)}
+else if(t.id==='oleave'){if(online&&online.host===CAP.me&&online.status==='lobby'){const r=online.ref;await leaveOnline(false);try{await r.delete()}catch(_){}}else await leaveOnline(false);try{$('dlg-online').close()}catch(_){}}
 else if(t.id==='olobby')backToLobby();
 else if(t.dataset.seat){const i=+t.dataset.seat;editLobby(d=>{const s=d.seats[i];const order=['open','bot','empty'];s.kind=s.kind==='human'?'open':order[(order.indexOf(s.kind)+1)%3];s.uid=null;s.nick=s.kind==='bot'?SEATS[i].name:''})}
 else if(t.dataset.rule){if(online.host!==CAP.me)return;const k=t.dataset.rule,v=t.checked?1:0;editLobby(d=>{d.rules[k]=v})}
@@ -1298,12 +1289,12 @@ else{try{const n=await netCAP();if(n){CAP.db=n.db;CAP.room=n.room;CAP.me=n.me;CA
 CAP.ready=true;renderOnline();if(!$('home').hidden)renderHome();const m=(location.hash||'').match(/^#g-([a-z0-9]{5})$/);if(m&&CAP.db&&CAP.me)connect(m[1]).catch(()=>{})}
 
 /* ---------- HOME ---------- */
-let hadSave=false,homeView='main',roomList=[],roomF='all';
+let homeView='main',roomList=[],roomF='all';
 function showHome(view){const h=$('home');homeView=view||'main';h.classList.remove('bye');h.hidden=false;document.documentElement.classList.add('homeon');try{$('hnick').value=localStorage.getItem('kvt-nick')||''}catch(e){}renderHome();if(homeView==='rooms')loadRooms()}
 function hideHome(){const h=$('home');document.documentElement.classList.remove('homeon');if(h.hidden)return;if(still){h.hidden=true;return}h.classList.add('bye');setTimeout(()=>{if(h.classList.contains('bye')){h.hidden=true;h.classList.remove('bye')}},230)}
 function renderHome(){const net=!!(CAP.db&&CAP.me);$('hmMain').hidden=homeView!=='main';$('hmRooms').hidden=homeView!=='rooms';
-$('hrooms').hidden=!CAP.list;$('hpriv').hidden=!net;$('hcont').hidden=!(S&&!S.over&&!online&&hadSave);
-$('hnote').textContent=!CAP.ready?'Connecting to the game server…':net?(CAP.list?'Play drops you into an open public room, or opens a new one.':''):'Online rooms need the game server. You can still play here against bots, or pass-and-play with friends.';
+$('hrooms').hidden=!CAP.list;$('hpriv').hidden=!net;$('hcont').hidden=!online;
+$('hnote').textContent=!CAP.ready?'Connecting to the game server…':net?(CAP.list?'Play drops you into an open public room, or opens a new one. Bots fill any empty seats.':'Play opens a room. Send friends the link, or start with bots.'):'Can’t reach the game server. Check your connection, then reload the page.';
 if(homeView==='rooms')renderRooms()}
 function homeNick(){const inp=$('hnick'),v=inp.value.trim().slice(0,16);if(!v){toastMsg('Type a nickname first.');inp.focus();return''}try{localStorage.setItem('kvt-nick',v)}catch(e){}return v}
 const openLobby=()=>{renderOnline();try{$('dlg-online').showModal()}catch(e){}};
@@ -1323,17 +1314,17 @@ $('hrefresh').onclick=()=>loadRooms();
 $('hnew').onclick=async()=>{const n=homeNick();if(!n)return;$('hnew').disabled=true;try{await createRoom(n,true);hideHome();openLobby()}catch(e){toastMsg('Could not create the room. Try again.')}finally{$('hnew').disabled=false}};
 $('hrooms').onclick=()=>{homeView='rooms';renderHome();loadRooms()};
 $('hpriv').onclick=async()=>{const n=homeNick();if(!n)return;$('hpriv').disabled=true;try{await createRoom(n,false);hideHome();openLobby()}catch(e){toastMsg(e&&e.code==='invalid_argument'?'You need Editor access to this game to host.':'Could not create the room. Try again.')}finally{$('hpriv').disabled=false}};
-$('hlocal').onclick=()=>{hideHome();try{$('dlg-setup').showModal()}catch(e){}};
 $('hcont').onclick=()=>hideHome();
 $('hplay').onclick=async()=>{if(!CAP.ready){toastMsg('Still connecting. Try again in a second.');return}const n=homeNick();if(!n)return;const btn=$('hplay');
-if(!CAP.list){hideHome();if(online)await leaveOnline(true);start(newGame([{name:n,bot:false},...SEATS4.slice(1)].map((x,i)=>({...x,col:PC[i],tok:i})),ruleCfg()));return}
+if(!CAP.db||!CAP.me){toastMsg('Can’t reach the game server. Reload the page to try again.');return}
+if(!CAP.list){btn.disabled=true;try{await createRoom(n,false);hideHome();openLobby()}catch(e){$('hnote').textContent='Could not open a room. Try again.'}finally{btn.disabled=false}return}
 btn.disabled=true;try{const l=(await CAP.list())||[];const r=l.find(x=>x&&/^[a-z0-9]{5}$/.test(x.code)&&Array.isArray(x.seats)&&x.seats.some(y=>y.kind==='open'));
 if(r)await joinRoom(r.code,n);else await createRoom(n,true);hideHome();openLobby()}catch(e){$('hnote').textContent='Could not reach a room. Try again.'}finally{btn.disabled=false}};
 $('hnick').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('hplay').click()}});
 $('brand').onclick=()=>showHome();
 document.addEventListener('click',e=>{if(e.target.closest('[data-home]'))showHome()});
 
-function boot(d){let s=d&&d.players?d:null;if(!s){try{const j=JSON.parse(localStorage.getItem('kvt-7')||'null');if(j&&j.players){s=j;hadSave=!j.over}}catch(e){}}
+function boot(d){let s=d&&d.players?d:null;if(!s){try{const j=JSON.parse(localStorage.getItem('kvt-7')||'null');if(j&&j.players)s=j}catch(e){}}
 if(!s){s=newGame(SEATS4,KV);const keep=s.players.map(p=>p.bot);s.players.forEach(p=>p.bot=true);let g=0;while(s.round<=8&&!s.over&&g++<500)botTurn(s);s.players.forEach((p,i)=>p.bot=keep[i]);
 log(s,'Rounds 1 to 8 were played by bots so you join mid-game.')}
 start(s);initOnline();if(!d&&!/^#g-/.test(location.hash||''))showHome()}
