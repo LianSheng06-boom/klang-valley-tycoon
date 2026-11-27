@@ -7,7 +7,7 @@ Everything is played online through the game server (`server.js`). See **Online 
 ## How it plays
 
 - The home page has **Play** (jump into an open public room, or open one), **All rooms** (browse public rooms by rules), and **Create a private game**.
-- 2–6 players in an online room, with bots filling empty seats, so you can also play alone against bots. Tap your token to change it.
+- 2–6 players in an online room. A new room starts with every other seat empty; the host picks **Friends only** or **Fill with bots**, or sets each seat to empty, bot or closed, so you can also play alone against bots. Tap your token to change it; no two players share one.
 - Roll the 3D dice, buy the places you land on, collect full colour sets and build houses, then condos.
 - Skip a place and it goes to **auction**: everyone bids in turn, and passing drops you out. Online, a bidder who walks away is passed after 20 seconds.
 - **Mortgage** a place for half its price (no rent until you pay it back plus 10%), and sell houses back at half price. Open a place's card on your turn to find these buttons.

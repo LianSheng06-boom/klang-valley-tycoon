@@ -430,6 +430,8 @@ button.brand{border:0;background:none;padding:0;cursor:pointer;text-align:left;c
 .fchips{display:flex;flex-wrap:wrap;gap:6px}
 .fchips button{font:600 12.5px Fredoka,sans-serif;border:1px solid var(--line);background:var(--tile);color:var(--mute);border-radius:20px;padding:5px 12px;cursor:pointer}
 .fchips button[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+.fchips button:disabled{cursor:default;opacity:.75}.fillc{cursor:default;flex-wrap:wrap}.fillc>div:nth-child(2){flex:1 1 160px}.fillc .fchips{flex:0 0 auto;flex-wrap:nowrap}
+.seat.off .av{opacity:.35}.seat.off .snm{opacity:.6}
 .rooms{display:grid;gap:8px;max-height:min(52vh,460px);overflow:auto;padding:2px}
 .room{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;text-align:left;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--tile);cursor:pointer;transition:transform .12s,background .15s}
 .room:hover:not(:disabled){background:var(--acc-soft)}.room:active:not(:disabled){transform:scale(.99)}.room:disabled{opacity:.55;cursor:default}
@@ -1161,8 +1163,8 @@ const pool=here&&here.size?hum.filter(u=>here.has(u)):[online.host];return pool[
 async function withLease(ref,fn){for(let k=0;k<6;k++){let l;try{l=await ref.acquire({holder:CAP.me,ttlMs:4000})}catch(e){throw e}if(l.acquired){const snap=await ref.get();return fn(snap)}await wait(700)}throw {code:'busy'}}
 const newCode=()=>[...Array(5)].map(()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 async function createRoom(nick,pub){const code=newCode(),ref=CAP.db.doc('games/'+code),E={kind:'empty',uid:null,nick:''},O={kind:'open',uid:null,nick:''};
-const seats=[{kind:'human',uid:CAP.me,nick},{...O},{...O},pub?{...O}:{kind:'bot',uid:null,nick:'Kumar'},{...E},{...E}];
-await ref.set({v:1,code,host:CAP.me,status:'lobby',pub:!!pub,botfill:true,seats,rules:Object.assign({},KV),state:null,rev:0,by:CAP.me,at:Date.now()});await connect(code)}
+const seats=[{kind:'human',uid:CAP.me,nick},{...O},{...O},{...O},{...O},{...O}];
+await ref.set({v:1,code,host:CAP.me,status:'lobby',pub:!!pub,botfill:false,seats,rules:Object.assign({},KV),state:null,rev:0,by:CAP.me,at:Date.now()});await connect(code)}
 async function joinRoom(code,nick){const ref=CAP.db.doc('games/'+code);let note='';
 await withLease(ref,async snap=>{if(!snap.exists)throw {code:'missing'};const d=snap.data();const seats=d.seats.map(s=>Object.assign({},s));
 if(seats.some(s=>s.uid===CAP.me)){const s=seats.find(s=>s.uid===CAP.me);if(nick&&s.nick!==nick&&d.status==='lobby'){s.nick=nick;await ref.set(Object.assign({},d,{seats,at:Date.now()}))}return}
@@ -1198,17 +1200,18 @@ busy=false;holdToasts=false;rolled=false}
 if(g!==gen)break;render()}
 animating=false;if(online===o){renderOnline();schedule()}}
 async function startOnline(){const o=online;if(!o||o.host!==CAP.me)return;const seats=o.seats.map((s,i)=>Object.assign({},s,{i})).filter(s=>s.kind==='human'||s.kind==='bot'||(s.kind==='open'&&o.botfill));
-if(seats.length<2){toastMsg('You need at least 2 players.');return}if(!seats.some(s=>s.kind==='human'&&s.uid!==CAP.me)&&!confirmSolo){confirmSolo=true;toastMsg('No friends have joined yet. Press Start again to play with bots only.');return}
-const g=newGame(seats.map(s=>({name:s.kind==='open'?SEATS[s.i].name:(s.nick||(s.kind==='bot'?SEATS[s.i].name:'Player')),bot:s.kind!=='human',uid:s.kind==='human'?s.uid:null,col:PC[s.i],tok:s.tok??s.i})),o.rules);log(g,'Online game started. Jom!');
+if(seats.length<2){toastMsg(o.botfill?'Open at least one seat first.':'Wait for a friend to join, or choose Fill with bots.');return}const tk=seatToks(o.seats);
+const g=newGame(seats.map(s=>({name:s.kind==='open'?SEATS[s.i].name:(s.nick||(s.kind==='bot'?SEATS[s.i].name:'Player')),bot:s.kind!=='human',uid:s.kind==='human'?s.uid:null,col:PC[s.i],tok:tk[s.i]})),o.rules);log(g,'Online game started. Jom!');
 const rev=(o.rev||0)+1;try{await o.ref.set(Object.assign(base(),{status:'playing',state:g,rev,by:CAP.me,at:Date.now()}))}catch(e){toastMsg('Could not start the game. Try again.');return}
 if(online===o&&!o.playing)onDoc({exists:true,data:()=>({host:o.host,seats:o.seats,rules:o.rules,status:'playing',state:g,rev,at:Date.now()})})}
-let confirmSolo=false;
 async function backToLobby(){if(!online||online.host!==CAP.me)return;const o=online;try{await o.ref.set(Object.assign(base(),{status:'lobby',state:null,rev:(o.rev||0)+1,by:CAP.me,at:Date.now()}))}catch(e){toastMsg('Could not reset the room.')}}
 async function leaveOnline(silent){const o=online;if(!o)return;online=null;gen++;busy=false;try{o.unsub&&o.unsub()}catch(e){}try{o.room&&o.room.leave()}catch(e){}
 try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
 if(o.playing||!silent){S=loadLocal();seen=S.ln||0;prevCash=[];pp=-1;$('players').innerHTML='';$('toks').innerHTML='';tileKeys=[];feedLn=-1;render(true)}renderOnline();if(!silent)showHome()}
 function loadLocal(){try{const j=JSON.parse(localStorage.getItem('kvt-7')||'null');if(j&&j.players)return fixState(j)}catch(e){}const s=newGame(SEATS4,KV);return s}
-const kindLabel={human:'Player',open:'Open seat',bot:'Bot',empty:'Empty'};
+const kindLabel={human:'Player',open:'Empty seat',bot:'Bot',empty:'Closed'};
+function seatToks(seats){const out=[],used=new Set();seats.forEach((x,i)=>{if(x&&x.kind!=='empty'&&x.tok!=null&&!used.has(x.tok%TOK.length)){out[i]=x.tok%TOK.length;used.add(out[i])}});
+seats.forEach((x,i)=>{if(out[i]!=null)return;let t=(x&&x.tok!=null?x.tok:i)%TOK.length;for(let k=0;k<TOK.length&&used.has(t);k++)t=(t+1)%TOK.length;out[i]=t;if(x&&x.kind!=='empty')used.add(t)});return out}
 function renderOnline(){renderChat();const el=$('online');if(!el)return;const chip=$('ochip');
 if($('opl'))$('opl').hidden=!!online||(CAP.ready&&(!CAP.db||!CAP.me));if(chip){chip.hidden=!online;if(online){const n=online.peers?online.peers.size:0;chip.innerHTML=`${I('globe')}<span></span>`;chip.lastChild.textContent=online.code.toUpperCase()+(n?` · ${n} online`:'')}}
 if(!CAP.ready){el.innerHTML=`<p class="note">Connecting…</p>`;return}
@@ -1220,11 +1223,11 @@ if(!online){el.innerHTML=`${onlineMsg?`<p class="note" style="color:var(--bad)" 
 if(onlineMsg)$('omsg').textContent=onlineMsg;try{$('onick').value=localStorage.getItem('kvt-nick')||''}catch(e){}return}
 const o=online,host=o.host===CAP.me,link=shareURL()+'#g-'+o.code;
 if(!o.loaded){el.innerHTML=`<p class="note">Opening room…</p>`;return}
-const seatRow=(s,i)=>{const here=s.uid&&o.peers&&o.peers.has(s.uid);const me=s.uid===CAP.me,tk=TOK[(s.tok??i)%TOK.length];return`<div class="seat">${me&&o.status==='lobby'?`<button type="button" class="av tokb" data-tok="${i}" style="--p:${PC[i]}" aria-label="Change your token" title="Change token">${I(tk)}</button>`:`<span class="av" style="--p:${PC[i]}">${I(tk)}</span>`}<span class="snm"><span class="sn" data-n="${i}"></span><small>${s.kind==='human'?(o.peers?(here?'<i class="live"></i>online':'offline'):'Player'):s.kind==='open'?'Waiting for a friend':kindLabel[s.kind]}${me?' · you':''}${s.uid===o.host?' · host':''}</small></span>${host&&o.status==='lobby'&&!me?`<button class="b sm" data-seat="${i}">${s.kind==='human'?'Remove':'Change'}</button>`:''}</div>`};
+const stk=seatToks(o.seats);const seatRow=(s,i)=>{const here=s.uid&&o.peers&&o.peers.has(s.uid);const me=s.uid===CAP.me,tk=TOK[stk[i]];return`<div class="seat${s.kind==='empty'?' off':''}">${me&&o.status==='lobby'?`<button type="button" class="av tokb" data-tok="${i}" style="--p:${PC[i]}" aria-label="Change your token" title="Change token">${I(tk)}</button>`:`<span class="av" style="--p:${PC[i]}">${I(tk)}</span>`}<span class="snm"><span class="sn" data-n="${i}"></span><small>${s.kind==='human'?(o.peers?(here?'<i class="live"></i>online':'offline'):'Player'):s.kind==='open'?(o.botfill?'A friend can join, or a bot plays':'A friend can join'):s.kind==='empty'?'No one sits here':kindLabel[s.kind]}${me?' · you':''}${s.uid===o.host?' · host':''}</small></span>${host&&o.status==='lobby'&&!me?`<button class="b sm" data-seat="${i}">${s.kind==='human'?'Remove':'Change'}</button>`:''}</div>`};
 el.innerHTML=`<div class="code"><small>Room code</small><b>${o.code.toUpperCase()}</b><button class="b sm" id="ocopy">${I('card')}Copy invite</button></div>
 <p class="note">Send friends this link and code: <span class="lnk"></span></p>
 <section class="card">${o.seats.map(seatRow).join('')}</section>
-${o.status==='lobby'?`<section class="card"><h3 class="ch">Room</h3><label class="sw"><span class="hic">${I('globe')}</span><div>Public room<small>${CAP.list?'Shown under All rooms so anyone can join.':'Anyone with the code can join.'}</small></div><input type="checkbox" data-pub${o.pub?' checked':''}${host&&CAP.list?'':' disabled'}><span></span></label><label class="sw"><span class="hic">${I('bot')}</span><div>Bots fill open seats<small>Seats nobody took get a bot when the game starts.</small></div><input type="checkbox" data-botfill${o.botfill?' checked':''}${host?'':' disabled'}><span></span></label></section>
+${o.status==='lobby'?`<section class="card"><h3 class="ch">Room</h3><label class="sw"><span class="hic">${I('globe')}</span><div>Public room<small>${CAP.list?'Shown under All rooms so anyone can join.':'Anyone with the code can join.'}</small></div><input type="checkbox" data-pub${o.pub?' checked':''}${host&&CAP.list?'':' disabled'}><span></span></label><div class="sw fillc"><span class="hic">${I('bot')}</span><div>Empty seats<small>${o.botfill?'Bots take any seat still empty when the game starts.':'Only friends play. Empty seats stay empty.'}</small></div><div class="fchips" role="group" aria-label="Empty seats"><button type="button" data-fill="0" aria-pressed="${!o.botfill}"${host?'':' disabled'}>Friends only</button><button type="button" data-fill="1" aria-pressed="${!!o.botfill}"${host?'':' disabled'}>Fill with bots</button></div></div></section>
 <section class="card"><h3 class="ch">Game rules${host?'':' (set by the host)'}</h3>${ruleRows(o.rules,k=>`data-rule="${k}"`,!host)}</section>
 <details class="card rdet"><summary>Klang Valley house rules</summary>${RULES.map(r=>`<label class="sw"><span class="hic">${I(RIC[r[0]])}</span><div>${r[1]}<small>${r[2]}</small></div><input type="checkbox" data-rule="${r[0]}"${o.rules[r[0]]?' checked':''}${host?'':' disabled'}><span></span></label>`).join('')}</details>
 ${host?`<div class="btns"><button class="b p" id="ostart">${I('dice')}Start game</button><button class="b" id="oleave">${I('x')}Close room</button></div>`:`<p class="note">Waiting for the host to start…</p><div class="btns"><button class="b" id="oleave">${I('x')}Leave room</button></div>`}`
@@ -1239,11 +1242,11 @@ else if(t.id==='ocopy'){const txt=`Jom main Klang Valley Tycoon! Open ${shareURL
 else if(t.id==='ostart')startOnline();
 else if(t.id==='oleave'){if(online&&online.host===CAP.me&&online.status==='lobby'){const r=online.ref;await leaveOnline(false);try{await r.delete()}catch(_){}}else await leaveOnline(false);try{$('dlg-online').close()}catch(_){}}
 else if(t.id==='olobby')backToLobby();
-else if(t.dataset.seat){const i=+t.dataset.seat;editLobby(d=>{const s=d.seats[i];const order=['open','bot','empty'];s.kind=s.kind==='human'?'open':order[(order.indexOf(s.kind)+1)%3];s.uid=null;s.nick=s.kind==='bot'?SEATS[i].name:''})}
+else if(t.dataset.seat){const i=+t.dataset.seat;editLobby(d=>{const s=d.seats[i];const order=['open','bot','empty'];/* Empty seat, Bot, Closed */s.kind=s.kind==='human'?'open':order[(order.indexOf(s.kind)+1)%3];s.uid=null;s.nick=s.kind==='bot'?SEATS[i].name:''})}
 else if(t.dataset.rule){if(online.host!==CAP.me)return;const k=t.dataset.rule,v=t.checked?1:0;editLobby(d=>{d.rules[k]=v})}
 else if('pub' in t.dataset){if(online.host!==CAP.me)return;const v=t.checked;editLobby(d=>{d.pub=v})}
-else if('botfill' in t.dataset){if(online.host!==CAP.me)return;const v=t.checked;editLobby(d=>{d.botfill=v})}
-else if(t.dataset.tok){const i=+t.dataset.tok;editLobby(d=>{const s=d.seats[i];if(s&&s.uid===CAP.me)s.tok=((s.tok??i)+1)%TOK.length})}
+else if(t.dataset.fill){if(online.host!==CAP.me)return;const v=t.dataset.fill==='1';editLobby(d=>{d.botfill=v})}
+else if(t.dataset.tok){const i=+t.dataset.tok;editLobby(d=>{const s=d.seats[i];if(!s||s.uid!==CAP.me)return;const cur=seatToks(d.seats),taken=new Set(d.seats.map((x,j)=>j!==i&&x&&x.kind!=='empty'?cur[j]:-1));let n=cur[i];for(let k=0;k<TOK.length;k++){n=(n+1)%TOK.length;if(!taken.has(n))break}s.tok=n})}
 else if(t.id==='obrowse'){$('dlg-online').close();showHome('rooms')}});
 document.addEventListener('change',e=>{const t=e.target;if(t.tagName!=='SELECT'||!t.closest('#online')||t.dataset.rule!=='cash'||!online||online.host!==CAP.me)return;const v=+t.value||1500;editLobby(d=>{d.rules.cash=v})});
 /* an auction stalls if a bidder walks away: their device passes after 20s, or the bot runner after 25s if they are offline */
