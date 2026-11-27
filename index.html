@@ -466,6 +466,7 @@ button.brand{border:0;background:none;padding:0;cursor:pointer;text-align:left;c
 .mpi.mg{opacity:.6;background:repeating-linear-gradient(135deg,var(--tile) 0 6px,transparent 6px 12px)}
 .mpsum{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 4px 10px}
 @media(max-width:640px){#sharec{order:1}}
+@media(min-width:1001px){.stage{max-width:min(790px,calc(100dvh - 112px))}main{padding-top:16px;padding-bottom:16px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -878,7 +879,7 @@ function rc(i){if(i<=10)return[1,1+i];if(i<20)return[1+(i-10),11];if(i<=30)retur
 const side=i=>i%10===0?'cn':i<10?'st':i<20?'sr2':i<30?'sb':'sl';
 const CK={go:['go','var(--good)'],jail:['car','var(--hi)'],rest:['cup','#e08b3a'],gojail:['cone','var(--bad)']};
 const tIcon=t=>t.t==='util'?(t.n==='Power Grid'?'bolt':'drop'):t.t==='card'?(t.n==='Rezeki'?'chance':'angpow'):t.t==='rail'?'rail':t.t==='tax'?(t.k==='toll'?'toll':'tax'):null;
-const tColor=t=>t.t==='p'?GC[t.g]:t.t==='rail'?'var(--acc)':t.t==='util'?'var(--hi)':t.t==='card'?(t.n==='Rezeki'?'var(--acc)':'var(--bad)'):t.t==='tax'?'var(--hi)':'var(--mute)';
+const tColor=t=>t.t==='p'?GC[t.g]:t.t==='rail'?'#8e9aaf':t.t==='util'?'#d9c9a8':t.t==='card'?(t.n==='Rezeki'?'var(--acc)':'var(--bad)'):t.t==='tax'?'var(--hi)':'var(--mute)';
 const canHumanBuild=()=>!S.over&&!busy&&!P(S).bot&&mine()&&(S.phase==='roll'||S.phase==='end');
 const canBid=()=>!!(S&&S.phase==='auction'&&S.auc&&!busy&&!S.over)&&(online&&online.playing?S.players[aucWho(S)].uid===CAP.me:!S.players[aucWho(S)].bot);
 const canBuild0=()=>canHumanBuild()&&T.some((_,i)=>canBuild(S,S.cur,i));
@@ -886,7 +887,7 @@ function tileHTML(i){const t=T[i],[r,c]=rc(i),sd=side(i),o=S.own[i],b=S.bld[i]||
 const cls=['tile',sd];if(S.mort[i])cls.push('mort');
 let inner;
 if(sd==='cn'){const[k,col]=CK[t.t];return`<button class="${cls.join(' ')}" style="grid-area:${r}/${c};--k:${col};--g:${col}" data-i="${i}" aria-label="${esc(t.n)}"><span class="tx">${I(k).replace('class="i"','class="i ti"')}<span class="nm">${esc(t.n)}</span></span></button>`}
-const cap=t.t==='p'?`<span class="cap" style="--g:${GC[t.g]}">${b===5?'<i class="c"></i>':'<i></i>'.repeat(b)}</span>`:'';
+const cap=t.t==='p'?`<span class="cap" style="--g:${GC[t.g]}">${b===5?'<i class="c"></i>':'<i></i>'.repeat(b)}</span>`:t.t==='rail'||t.t==='util'?`<span class="cap" style="--g:${tColor(t)}"></span>`:'';
 const ic=symOf(i);
 inner=`${cap}<span class="tx">${ic?`<span class="sy" style="color:${tColor(t)}">${I(ic).replace('class="i"','class="i ti"')}</span>`:''}<span class="nm">${esc(t.n)}</span>${t.c?`<span class="pr">${RM(t.c)}</span>`:''}</span>${o!==undefined?`<span class="own" style="--o:${S.players[o].col}"></span>`:''}`;
 return`<button class="${cls.join(' ')}" style="grid-area:${r}/${c}" data-i="${i}" aria-label="${esc(t.n)}${o!==undefined?', owned by '+esc(S.players[o].name):''}${S.mort[i]?', mortgaged':''}">${inner}</button>`}
