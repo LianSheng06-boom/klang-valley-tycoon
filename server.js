@@ -12,7 +12,7 @@ const ROOM = /^kvt-[a-z0-9]{5}$/;
 const MAX_DOCS = 500;
 const IDLE_MS = 24 * 3600e3;
 
-/* ---------- static files: only the page and its photos ---------- */
+/* ---------- static files: only the page ---------- */
 function sendFile(res, rel, type, cache) {
   fs.readFile(path.join(__dirname, rel), (err, buf) => {
     if (err) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('Not found'); }
@@ -25,8 +25,6 @@ const server = http.createServer((req, res) => {
   try { p = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch { p = ''; }
   if (p === '/healthz') { res.writeHead(200, { 'content-type': 'text/plain', 'cache-control': 'no-store' }); return res.end('ok'); }
   if (p === '/' || p === '/index.html') return sendFile(res, 'index.html', 'text/html; charset=utf-8', 'no-cache');
-  const m = p.match(/^\/img\/([a-z0-9-]+)\.jpg$/);
-  if (m) return sendFile(res, 'img/' + m[1] + '.jpg', 'image/jpeg', 'public, max-age=604800');
   res.writeHead(404, { 'content-type': 'text/plain' });
   res.end('Not found');
 });
