@@ -150,6 +150,25 @@ wss.on('connection', ws => {
           }
           return reply(true);
         }
+        case 'list': {
+          // public rooms still in the lobby whose players are connected; nicknames only, no ids
+          const out = [];
+          for (const [p, d] of docs) {
+            const g = d.data;
+            if (!g || g.status !== 'lobby' || !g.pub || !(subs.get(p) || { size: 0 }).size) continue;
+            const seats = Array.isArray(g.seats) ? g.seats.slice(0, 6) : [];
+            const host = seats.find(s => s && s.uid === g.host);
+            out.push({
+              code: p.slice(6), at: d.at,
+              host: host ? String(host.nick || '').slice(0, 16) : '',
+              seats: seats.map(s => ({ kind: ['human', 'bot', 'open', 'empty'].includes(s && s.kind) ? s.kind : 'empty' })),
+              rules: Object.fromEntries(Object.entries(g.rules && typeof g.rules === 'object' ? g.rules : {})
+                .filter(([k, v]) => /^[a-z0-9]{1,12}$/i.test(k) && typeof v === 'number').slice(0, 20)),
+            });
+          }
+          out.sort((a, b) => b.at - a.at);
+          return reply(out.slice(0, 40));
+        }
         default: return reply(null, 'unknown_op');
       }
     } catch (e) { reply(null, typeof e === 'string' ? e : 'error'); }

@@ -6,12 +6,31 @@ A property-trading board game set in the Klang Valley, from Kajang satay to the 
 
 ## How it plays
 
-- 2–4 players on one screen (pass-and-play), with bots filling the empty seats.
+- The home page has **Play** (jump into an open public room, or open one), **All rooms** (browse public rooms by rules), **Create a private game**, and **Play on this device**.
+- 2–6 players, on one screen (pass-and-play) or online, with bots filling empty seats. Tap your token to change it.
 - Roll the 3D dice, buy the places you land on, collect full colour sets and build houses, then condos.
+- Skip a place and it goes to **auction**: everyone bids in turn, and passing drops you out. Online, a bidder who walks away is passed after 20 seconds.
+- **Mortgage** a place for half its price (no rent until you pay it back plus 10%), and sell houses back at half price. Open a place's card on your turn to find these buttons.
 - Point at a tile to see its card. On a phone, tap it.
 - Trade on your turn: Trades → Create, pick a player, tap places and set cash on each side. Bots answer straight away; friends get an Accept / Decline pop-up.
 - Online rooms have a chat. Anyone who joins late sees the recent messages.
+- Give up from the ☰ menu on your turn; your places go back to the bank.
 - Highest net worth after 20 rounds wins.
+
+## Game rules
+
+Set these under New game, or in the online room before the game starts:
+
+| Rule | Default |
+|---|---|
+| Double rent on full colour sets | On |
+| Auctions | On |
+| Mortgages | On |
+| Even building | On |
+| No rent while the owner is stuck in the jam | Off |
+| Mamak Break pot: taxes and fines pile up for whoever lands on Mamak Break | Off |
+| Random turn order | Off |
+| Starting cash | RM1,500 (RM500 to RM3,000) |
 
 ## House rules that stop the bankruptcy spiral
 
