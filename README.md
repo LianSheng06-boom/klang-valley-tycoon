@@ -26,7 +26,12 @@ Every rule can be switched off under ☰ → New game. The Balance lab (☰ menu
 
 ## Online rooms
 
-Online rooms with friends on their own devices use Claude's artifact sharing, so they only work in the claude.ai version of the game. The GitHub Pages version is pass-and-play with bots.
+`server.js` is a small Node server that serves the game and keeps online rooms in sync over a WebSocket. Press **Play online**, create a room and send friends the invite link. They don't need an account.
+
+- **Host it on Render:** create a Blueprint from this repo. Render reads `render.yaml` and uses the free plan.
+- **Run it yourself:** `npm install`, then `npm start`, then open http://localhost:5177.
+
+Rooms are kept in memory. If the server restarts, or a free host puts it to sleep, the players' browsers send the game back when they reconnect, so a game in progress carries on. The GitHub Pages copy has no server, so it is pass-and-play with bots only.
 
 ## Photo credits
 

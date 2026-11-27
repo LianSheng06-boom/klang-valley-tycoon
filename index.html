@@ -797,6 +797,7 @@ $('verdict').textContent=`Knockouts: ${pct(c.ko,N)} of classic games, ${pct(k.ko
 $('labst').textContent=`Done · ${N} games each`;btn.disabled=false};
 /* ---------- ONLINE ---------- */
 const ART_URL='https://claude.ai/artifact/M5M1GsUVu8B9KmKxpSqu5w';
+const shareURL=()=>CAP.mode==='net'?location.origin+location.pathname:ART_URL;
 const CODECH='abcdefghjkmnpqrstuvwxyz23456789';
 let online=null,CAP={ready:false,db:null,user:null,room:null,me:null},lastPushed='',wq=Promise.resolve(),animating=false,holdToasts=false,botPending=false,onlineMsg='';
 const mine=()=>!online||!online.playing||!S||P(S).uid===CAP.me;
@@ -860,13 +861,13 @@ const kindLabel={human:'Player',open:'Open seat',bot:'Bot',empty:'Empty'};
 function renderOnline(){const el=$('online');if(!el)return;const chip=$('ochip');
 if($('opl'))$('opl').hidden=!!online||(CAP.ready&&(!CAP.db||!CAP.me));if(chip){chip.hidden=!online;if(online){const n=online.peers?online.peers.size:0;chip.innerHTML=`${I('globe')}<span></span>`;chip.lastChild.textContent=online.code.toUpperCase()+(n?` · ${n} online`:'')}}
 if(!CAP.ready){el.innerHTML=`<p class="note">Connecting…</p>`;return}
-if(!CAP.db||!CAP.me){el.innerHTML=`<div class="rule"><span class="hic">${I('info')}</span><h3>Online play isn't available here</h3><p>Open this game on claude.ai while signed in. Friends need to be invited to it by email as <b>Editors</b> so their moves can be saved. You can still play pass-and-play on this screen.</p></div>`;return}
+if(!CAP.db||!CAP.me){el.innerHTML=`<div class="rule"><span class="hic">${I('info')}</span><h3>Online play isn't available here</h3><p>${window.claude&&window.claude.use?'Open this game on claude.ai while signed in. Friends need to be invited to it by email as <b>Editors</b> so their moves can be saved.':'This copy has no game server, so it can\'t host rooms. Open the online version of the game to play with friends.'} You can still play pass-and-play on this screen.</p></div>`;return}
 if(!online){el.innerHTML=`${onlineMsg?`<p class="note" style="color:var(--bad)" id="omsg"></p>`:''}
 <label class="fld"><span>Your nickname</span><input id="onick" maxlength="16" autocomplete="nickname" placeholder="e.g. Ah Boy"></label>
 <section class="rule"><span class="hic">${I('plus')}</span><h3>Create a room</h3><p>You'll get a 5-letter code to send your friends.</p><div><button class="b p" id="ocreate">${I('globe')}Create room</button></div></section>
 <section class="rule"><span class="hic">${I('user')}</span><h3>Join a friend's room</h3><p>Type the code they sent you.</p><div class="row2"><input id="ocode" maxlength="5" placeholder="abcde" autocapitalize="off" spellcheck="false"><button class="b p" id="ojoin">${I('next')}Join</button></div></section>`;
 if(onlineMsg)$('omsg').textContent=onlineMsg;try{$('onick').value=localStorage.getItem('kvt-nick')||''}catch(e){}return}
-const o=online,host=o.host===CAP.me,link=ART_URL+'#g-'+o.code;
+const o=online,host=o.host===CAP.me,link=shareURL()+'#g-'+o.code;
 if(!o.loaded){el.innerHTML=`<p class="note">Opening room…</p>`;return}
 const seatRow=(s,i)=>{const here=s.uid&&o.peers&&o.peers.has(s.uid);const me=s.uid===CAP.me;return`<div class="seat"><span class="av" style="--p:${PC[i]}">${I(TOK[i])}</span><span class="snm"><span class="sn" data-n="${i}"></span><small>${s.kind==='human'?(o.peers?(here?'<i class="live"></i>online':'offline'):'Player'):s.kind==='open'?'Waiting for a friend':kindLabel[s.kind]}${me?' · you':''}${s.uid===o.host?' · host':''}</small></span>${host&&o.status==='lobby'&&!me?`<button class="b sm" data-seat="${i}">${s.kind==='human'?'Remove':'Change'}</button>`:''}</div>`};
 el.innerHTML=`<div class="code"><small>Room code</small><b>${o.code.toUpperCase()}</b><button class="b sm" id="ocopy">${I('card')}Copy invite</button></div>
@@ -879,15 +880,50 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button,inp
 const nick=()=>{const v=(($('onick')||{}).value||'').trim().slice(0,16);try{localStorage.setItem('kvt-nick',v)}catch(_){}return v};
 if(t.id==='ocreate'){const n=nick();if(!n){toastMsg('Type a nickname first.');$('onick').focus();return}onlineMsg='';t.disabled=true;try{await createRoom(n)}catch(err){onlineMsg=err&&err.code==='invalid_argument'?'You need Editor access to this game to host. Ask the owner to invite you.':'Could not create the room. Try again.';renderOnline()}}
 else if(t.id==='ojoin'){const n=nick(),c=(($('ocode')||{}).value||'').trim().toLowerCase();if(!n){toastMsg('Type a nickname first.');return}if(!/^[a-z0-9]{5}$/.test(c)){toastMsg('Room codes are 5 letters or numbers.');return}onlineMsg='';t.disabled=true;
-try{await joinRoom(c,n)}catch(err){onlineMsg=err&&err.code==='missing'?'No room with that code.':err&&err.code==='invalid_argument'?'You need Editor access to this game to join. Ask the owner to invite you.':'Could not join right now. Try again.';renderOnline()}}
-else if(t.id==='ocopy'){const txt=`Jom main Klang Valley Tycoon! Open ${ART_URL}#g-${online.code} — room code ${online.code.toUpperCase()}`;try{await navigator.clipboard.writeText(txt);toastMsg('Invite copied.')}catch(err){toastMsg('Copy the link shown below the code.')}}
+try{await joinRoom(c,n)}catch(err){onlineMsg=err&&err.code==='missing'?'No room with that code.':err&&err.code==='invalid_argument'?'You need Editor access to this game to join. Ask the owner to invite you.':err&&err.code==='offline'?'Lost the connection. Try again in a moment.':'Could not join right now. Try again.';renderOnline()}}
+else if(t.id==='ocopy'){const txt=`Jom main Klang Valley Tycoon! Open ${shareURL()}#g-${online.code} — room code ${online.code.toUpperCase()}`;try{await navigator.clipboard.writeText(txt);toastMsg('Invite copied.')}catch(err){toastMsg('Copy the link shown below the code.')}}
 else if(t.id==='ostart')startOnline();
 else if(t.id==='oleave'){if(online&&online.host===CAP.me&&online.status==='lobby'){const r=online.ref;await leaveOnline(false);try{await r.delete()}catch(_){}}else leaveOnline(false)}
 else if(t.id==='olobby')backToLobby();
 else if(t.dataset.seat){const i=+t.dataset.seat;editLobby(d=>{const s=d.seats[i];const order=['open','bot','empty'];s.kind=s.kind==='human'?'open':order[(order.indexOf(s.kind)+1)%3];s.uid=null;s.nick=s.kind==='bot'?SEATS[i].name:''})}
 else if(t.dataset.rule){const k=t.dataset.rule,v=t.checked?1:0;editLobby(d=>{d.rules[k]=v})}});
 setInterval(()=>{if(online&&online.playing&&S&&!S.over&&!busy&&P(S).bot)schedule()},3000);
-async function initOnline(){const C=window.claude;if(C&&C.use){try{const [db,user,room]=await Promise.all([C.use('db'),C.use('user'),C.use('room')]);CAP.db=db;CAP.user=user;CAP.room=room;CAP.me=user?await user.id():null}catch(e){}}
+/* own game server (Render etc.): same shape as claude.ai's db/room, over one websocket */
+function netCAP(){if(!/^https?:$/.test(location.protocol))return Promise.resolve(null);
+return new Promise(done=>{let uid;try{uid=localStorage.getItem('kvt-uid')}catch(e){}
+if(!uid||!/^[a-z0-9]{6,40}$/i.test(uid)){uid='u'+Math.random().toString(36).slice(2,12)+Date.now().toString(36);try{localStorage.setItem('kvt-uid',uid)}catch(e){}}
+const url=(location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws';
+let ws=null,open=false,first=true,tries=0,seq=0;const pend=new Map(),queue=[],subs=new Map(),rooms=new Map();
+const raw=m=>{if(open)ws.send(JSON.stringify(m))};
+function send(m){return new Promise((ok,no)=>{m.id=++seq;const p={ok,no,m,sent:false};pend.set(m.id,p);if(open){ws.send(JSON.stringify(m));p.sent=true}else queue.push(p)})}
+const mk=m=>({exists:!!m.exists,data:()=>m.data?JSON.parse(JSON.stringify(m.data)):undefined});
+function conn(){ws=new WebSocket(url);
+ws.onopen=()=>{open=true;tries=0;raw({op:'hello',uid});
+for(const[p,s]of subs)raw({op:'sub',path:p,restore:s.last||undefined});
+for(const[n,r]of rooms)raw({op:'join',room:n,presence:r.pres});
+while(queue.length){const p=queue.shift();if(pend.has(p.m.id)){ws.send(JSON.stringify(p.m));p.sent=true}}
+if(first){first=false;done(api)}};
+ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(_){return}
+if(m.id){const p=pend.get(m.id);if(p){pend.delete(m.id);m.err?p.no({code:m.err}):p.ok(m.result)}return}
+if(m.t==='doc'){const s=subs.get(m.path);if(s){s.last=m.exists?m.data:null;const sn=mk(m);s.cbs.forEach(f=>{try{f(sn)}catch(_){}})}}
+else if(m.t==='msg'){const r=rooms.get(m.room);if(r)(r.h.get(m.name)||[]).forEach(f=>{try{f({name:m.name,data:m.data,by:m.by})}catch(_){}})}
+else if(m.t==='peers'){const r=rooms.get(m.room);if(r)r.pc.forEach(f=>{try{f({peers:m.peers})}catch(_){}})}};
+ws.onclose=()=>{open=false;for(const[id,p]of pend)if(p.sent){pend.delete(id);p.no({code:'offline'})}
+if(first){first=false;done(null);return}setTimeout(conn,Math.min(8000,600*2**tries++))}}
+const api={me:uid,
+db:{doc(path){return{set:d=>send({op:'set',path,data:d}),get:()=>send({op:'get',path}).then(mk),delete:()=>send({op:'del',path}),
+acquire:o=>send({op:'acquire',path,ttl:(o&&o.ttlMs)||4000}),
+onSnapshot(cb){let s=subs.get(path);if(!s){s={cbs:new Set(),last:undefined};subs.set(path,s);raw({op:'sub',path})}s.cbs.add(cb);
+return()=>{s.cbs.delete(cb);if(!s.cbs.size){subs.delete(path);raw({op:'unsub',path})}}}}}},
+room:{async join(name){const r={h:new Map(),pc:new Set(),pres:null};rooms.set(name,r);await send({op:'join',room:name});
+return{on(n,f){if(!r.h.has(n))r.h.set(n,new Set());r.h.get(n).add(f)},emit:(n,d)=>send({op:'emit',room:name,name:n,data:d}),onPeers(f){r.pc.add(f)},
+presence(p){r.pres=p;return send({op:'presence',room:name,presence:p})},leave(){rooms.delete(name);raw({op:'leave',room:name})}}}}};
+/* free hosts sleep when idle: keep it awake while a room is open */
+setInterval(()=>{if(rooms.size)fetch('/healthz',{cache:'no-store'}).catch(()=>{})},240000);
+setTimeout(()=>{if(first){first=false;try{ws.onclose=null;ws.close()}catch(_){}done(null)}},8000);
+conn()})}
+async function initOnline(){const C=window.claude;if(C&&C.use){try{const [db,user,room]=await Promise.all([C.use('db'),C.use('user'),C.use('room')]);CAP.db=db;CAP.user=user;CAP.room=room;CAP.me=user?await user.id():null;CAP.mode='claude'}catch(e){}}
+else{try{const n=await netCAP();if(n){CAP.db=n.db;CAP.room=n.room;CAP.me=n.me;CAP.mode='net'}}catch(e){}}
 CAP.ready=true;renderOnline();const m=(location.hash||'').match(/^#g-([a-z0-9]{5})$/);if(m&&CAP.db&&CAP.me)connect(m[1]).catch(()=>{})}
 
 function boot(d){let s=d&&d.players?d:null;if(!s){try{const j=JSON.parse(localStorage.getItem('kvt-7')||'null');if(j&&j.players)s=j}catch(e){}}
