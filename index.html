@@ -1196,7 +1196,7 @@ const ART_URL='https://claude.ai/artifact/M5M1GsUVu8B9KmKxpSqu5w';
 const shareURL=()=>CAP.mode==='net'?location.origin+location.pathname:ART_URL;
 const CODECH='abcdefghjkmnpqrstuvwxyz23456789';
 let online=null,CAP={ready:false,db:null,user:null,room:null,me:null},lastPushed='',wq=Promise.resolve(),animating=false,holdToasts=false,botPending=false,onlineMsg='';
-const mine=()=>!online||!online.playing||!S||P(S).uid===CAP.me;
+const mine=()=>!!(online&&online.playing&&S&&P(S).uid===CAP.me);
 const stripState=s=>{const c=Object.assign({},s);delete c.focus;return JSON.stringify(c)};
 function toastMsg(text){const box=$('toasts'),el=document.createElement('div');el.className='toast';el.innerHTML=`<span class="fi" style="--p:var(--acc)">${I('info')}</span><span></span>`;el.lastChild.textContent=text;box.appendChild(el);setTimeout(()=>{el.classList.add('bye');setTimeout(()=>el.remove(),320)},3200)}
 const base=()=>({v:1,code:online.code,host:online.host,status:online.status,pub:!!online.pub,botfill:online.botfill!==false,seats:online.seats,rules:online.rules});
@@ -1227,8 +1227,8 @@ r.on('sync',m=>{if(online===o&&m.data&&m.data.rev>o.rev)o.ref.get().then(s=>{if(
 r.onPeers(c=>{if(online!==o)return;o.peers=new Set(c.peers.map(p=>p.by||(p.presence&&p.presence.uid)).filter(Boolean));if(S)renderPlayers();renderOnline();schedule()});
 r.presence({uid:CAP.me}).catch(()=>{})}catch(e){}}
 renderOnline()}
-function onDoc(snap){const o=online;if(!snap.exists){if(o.loaded){leaveOnline(false);toastMsg('That room was closed.')}else{onlineMsg='No room with that code.';leaveOnline(false)}return}
-const d=snap.data();o.loaded=true;o.host=d.host;o.seats=d.seats||[];o.rules=Object.assign({},DEF,d.rules||KV);o.pub=!!d.pub;o.botfill=d.botfill!==false;o.status=d.status;o.lastAt=d.at||0;
+function onDoc(snap){const o=online;if(!snap.exists){if(inviteCode===o.code){inviteCode=null;homeMsg='That room has closed or the link is wrong. Ask your friend for a new invite.';leaveOnline(true);showHome();try{$('dlg-online').close()}catch(e){}return}if(o.loaded){leaveOnline(false);toastMsg('That room was closed.')}else{onlineMsg='No room with that code.';leaveOnline(false)}return}
+const d=snap.data();if(inviteCode===o.code){inviteCode=null;homeMsg='';hideHome();const seated=(d.seats||[]).some(x=>x&&x.uid===CAP.me);if(d.status==='lobby'||!d.state)setTimeout(()=>{if(online===o)openLobby()},0);else if(!seated)toastMsg('This game has already started, so you are watching.')}o.loaded=true;o.host=d.host;o.seats=d.seats||[];o.rules=Object.assign({},DEF,d.rules||KV);o.pub=!!d.pub;o.botfill=d.botfill!==false;o.status=d.status;o.lastAt=d.at||0;
 if(d.status==='lobby'||!d.state){if(o.playing){o.playing=false;gen++;busy=false;S=loadLocal();prevCash=[];$('players').innerHTML='';$('toks').innerHTML='';tileKeys=[];feedLn=-1;render(true)}o.rev=d.rev||0;renderOnline();return}
 if((d.rev||0)<=o.rev&&o.playing)return;o.rev=d.rev||0;
 if(!o.playing){o.playing=true;gen++;busy=false;clearTimeout(autoT);S=fixState(JSON.parse(JSON.stringify(d.state)));lastPushed=stripState(S);S.focus=S.players[S.cur].pos;seen=S.ln||0;prevCash=[];pp=-1;$('players').innerHTML='';$('toks').innerHTML='';tileKeys=[];feedLn=-1;try{$('dlg-online').close()}catch(e){}render(true);schedule();renderOnline();return}
@@ -1334,17 +1334,18 @@ setTimeout(()=>{if(first){first=false;try{ws.onclose=null;ws.close()}catch(_){}d
 conn()})}
 async function initOnline(){const C=window.claude;if(C&&C.use){try{const [db,user,room]=await Promise.all([C.use('db'),C.use('user'),C.use('room')]);CAP.db=db;CAP.user=user;CAP.room=room;CAP.me=user?await user.id():null;CAP.mode='claude'}catch(e){}}
 else{try{const n=await netCAP();if(n){CAP.db=n.db;CAP.room=n.room;CAP.me=n.me;CAP.list=n.list;CAP.mode='net'}}catch(e){}}
-CAP.ready=true;renderOnline();if(!$('home').hidden)renderHome();const m=(location.hash||'').match(/^#g-([a-z0-9]{5})$/);if(m&&CAP.db&&CAP.me)connect(m[1]).catch(()=>{})}
+CAP.ready=true;renderOnline();if(inviteCode&&!(CAP.db&&CAP.me)){inviteCode=null;homeMsg='Can’t reach the game server, so the invite can’t open. Reload the page to try again.'}if(!$('home').hidden)renderHome();
+if(inviteCode){const c=inviteCode;connect(c).catch(()=>{if(inviteCode===c){inviteCode=null;homeMsg='Could not open that room. Reload the page to try again.';showHome()}})}}
 
 /* ---------- HOME ---------- */
-let homeView='main',roomList=[],roomF='all';
+let inviteCode=null,homeMsg='',homeView='main',roomList=[],roomF='all';
 function showHome(view){const h=$('home');homeView=view||'main';h.classList.remove('bye');h.hidden=false;document.documentElement.classList.add('homeon');try{$('hnick').value=localStorage.getItem('kvt-nick')||''}catch(e){}renderHome();if(homeView==='rooms')loadRooms()}
 function hideHome(){const h=$('home');document.documentElement.classList.remove('homeon');if(h.hidden)return;if(still){h.hidden=true;return}h.classList.add('bye');setTimeout(()=>{if(h.classList.contains('bye')){h.hidden=true;h.classList.remove('bye')}},230)}
 function renderHome(){const net=!!(CAP.db&&CAP.me);$('hmMain').hidden=homeView!=='main';$('hmRooms').hidden=homeView!=='rooms';
 $('hrooms').hidden=!CAP.list;$('hpriv').hidden=!net;$('hcont').hidden=!online;
-$('hnote').textContent=!CAP.ready?'Connecting to the game server…':net?(CAP.list?'Play drops you into an open public room, or opens a new one. Bots fill any empty seats.':'Play opens a room. Send friends the link, or start with bots.'):'Can’t reach the game server. Check your connection, then reload the page.';
+$('hnote').textContent=inviteCode?`Opening room ${inviteCode.toUpperCase()}…`:homeMsg?homeMsg:!CAP.ready?'Connecting to the game server…':net?(CAP.list?'Play drops you into an open public room, or opens a new one. Bots fill any empty seats.':'Play opens a room. Send friends the link, or start with bots.'):'Can’t reach the game server. Check your connection, then reload the page.';
 if(homeView==='rooms')renderRooms()}
-function homeNick(){const inp=$('hnick'),v=inp.value.trim().slice(0,16);if(!v){toastMsg('Type a nickname first.');inp.focus();return''}try{localStorage.setItem('kvt-nick',v)}catch(e){}return v}
+function homeNick(){homeMsg='';const inp=$('hnick'),v=inp.value.trim().slice(0,16);if(!v){toastMsg('Type a nickname first.');inp.focus();return''}try{localStorage.setItem('kvt-nick',v)}catch(e){}return v}
 const openLobby=()=>{renderOnline();try{$('dlg-online').showModal()}catch(e){}};
 async function loadRooms(){if(!CAP.list){roomList=[];renderRooms();return}$('rlist').innerHTML='<p class="note">Looking for rooms…</p>';try{roomList=(await CAP.list())||[]}catch(e){roomList=null}if(homeView==='rooms')renderRooms()}
 function renderRooms(){const FL=[['all','All'],['kv','House rules'],['classic','Classic'],['auction','Auctions'],['mort','Mortgages']];
@@ -1372,10 +1373,13 @@ $('hnick').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault()
 $('brand').onclick=()=>showHome();
 document.addEventListener('click',e=>{if(e.target.closest('[data-home]'))showHome()});
 
+/* an invite pasted into a tab that already has the game open only changes the hash */
+window.addEventListener('hashchange',()=>{const m=(location.hash||'').match(/^#g-([a-z0-9]{5})$/i);if(!m)return;const c=m[1].toLowerCase();if(online&&online.code===c){hideHome();return}
+inviteCode=c;homeMsg='';try{$('dlg-online').close()}catch(e){}showHome();if(CAP.ready&&CAP.db&&CAP.me)connect(c).catch(()=>{if(inviteCode===c){inviteCode=null;homeMsg='Could not open that room. Reload the page to try again.';renderHome()}})});
 function boot(d){let s=d&&d.players?d:null;if(!s){try{const j=JSON.parse(localStorage.getItem('kvt-7')||'null');if(j&&j.players)s=j}catch(e){}}
 if(!s){s=newGame(SEATS4,KV);const keep=s.players.map(p=>p.bot);s.players.forEach(p=>p.bot=true);let g=0;while(s.round<=8&&!s.over&&g++<500)botTurn(s);s.players.forEach((p,i)=>p.bot=keep[i]);
 log(s,'Rounds 1 to 8 were played by bots so you join mid-game.')}
-start(s);initOnline();if(!d&&!/^#g-/.test(location.hash||''))showHome()}
+start(s);{const m=(location.hash||'').match(/^#g-([a-z0-9]{5})$/i);inviteCode=m?m[1].toLowerCase():null}initOnline();if(!d)showHome()}
 window.claude?.hot?.snapshot?.(()=>S);
 window.claude?.hot?.ready?window.claude.hot.ready(boot):boot(window.claude?.hot?.data??null);
 }
