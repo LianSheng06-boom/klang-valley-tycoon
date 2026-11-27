@@ -472,6 +472,15 @@ button.brand{border:0;background:none;padding:0;cursor:pointer;text-align:left;c
 .tile.ow.on,.tile.ow.can{box-shadow:inset 0 0 0 2.5px var(--acc)!important}
 .tile.ow:hover{background:color-mix(in srgb,var(--o) 32%,var(--tile))!important}
 .tile.ow .cap{flex-basis:16%!important}.tile.ow.sl .cap,.tile.ow.sr2 .cap{flex-basis:13%!important}
+/* the room sits in the right column while it waits to start */
+body.inlobby #sharec,body.inlobby #myprops,body.inlobby #trades,body.inlobby .side>section[aria-label="Players"]{display:none!important}
+#lobbyc #online{padding:0;gap:12px}
+#lobbyc #online>.btns:last-child{position:sticky;bottom:0;padding-bottom:max(10px,env(safe-area-inset-bottom))!important;z-index:2;background:var(--surface);margin:0 -4px -4px;padding:10px 4px 4px;border-top:1px solid var(--line)}
+@media(min-width:1001px){body.inlobby .side{position:sticky;top:76px;max-height:calc(100dvh - 92px);grid-template-rows:minmax(0,1fr) auto}body.inlobby #lobbyc{overflow:auto;overscroll-behavior:contain}#lobbyc #online>.btns:last-child{bottom:-16px;padding-bottom:4px!important}}
+.lobbyhud{margin:auto;display:grid;justify-items:center;gap:6px;text-align:center;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 22px}
+.lobbyhud .hic{width:44px;height:44px;border-radius:12px;background:var(--acc-soft);color:var(--acc);display:grid;place-items:center}
+.lobbyhud .lhint{display:flex;align-items:center;gap:5px;font-size:12px}.lobbyhud .lhint svg.i{width:13px;height:13px}.hud:has(.lobbyhud) .deed{margin-top:0}
+.lobbyhud b{font-size:17px}.lobbyhud small{color:var(--mute);font-size:13px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -491,6 +500,7 @@ button.brand{border:0;background:none;padding:0;cursor:pointer;text-align:left;c
 <div class="dealbox" id="dealbox" role="dialog" aria-label="Trade offer" hidden></div>
 </div>
 <aside class="side">
+<section class="card lobbyc" id="lobbyc" aria-label="Room" hidden></section>
 <section class="card" id="sharec" hidden></section>
 <section class="card" aria-label="Players"><div id="players"></div></section>
 <section class="card" id="myprops" hidden></section>
@@ -922,6 +932,7 @@ if(canMort(S,o,i))acts+=`<button class="b sm" data-a="mort">${I('lock')}Mortgage
 if(S.mort[i])acts+=`<button class="b sm" data-a="unmort"${canUnmort(S,o,i)?'':' disabled'}>${I('key')}Pay off ${RM(unmortCost(i))}</button>`}
 return`<div class="deed" style="--g:${t.t in CK?CK[t.t][1]:g}">${st}${deedOpen?'<button class="dx" data-a="closedeed" aria-label="Close card">×</button>':''}${head}<div class="db">${who}${acts?`<div class="dacts">${acts}</div>`:''}${body}${foot}</div></div>`}
 function hudHTML(){const p=P(S),k=S.cur;let st,btn='';
+if(S.lobby){const host=online&&online.host===CAP.me,n=S.players.length;return`<div class="lobbyhud"><span class="hic">${I('dice')}</span><b>${host?'Your room is ready':'Waiting for the host'}</b><small>${host?`${n} player${n>1?'s':''} in. Invite friends or add bots, then press Start game.`:'The game starts when the host presses Start game.'}</small><small class="lhint">${I('info')}Point at or tap any place to see its card.</small></div>${deedOpen?deedHTML(S.focus):''}`}
 if(S.over){const order=active(S).sort((a,b)=>worth(S,b)-worth(S,a));const again=!online?`<button class="b p" data-a="again">${I('dice')}Play again</button>`:online.host===CAP.me?`<button class="b p" data-a="again">${I('dice')}New round</button>`:'';
 return`<div class="play"><span class="av" style="--p:var(--hi);color:#2a2000">${I('trophy')}</span><div class="who"><div><b>${esc(S.players[S.win].name)} wins</b><small>Final net worth</small></div></div></div><ul class="stand">${order.map((j,n)=>`<li>${avatar(j)}<span>${n+1}. ${esc(S.players[j].name)}</span><span>${RM(worth(S,j))}</span></li>`).join('')}</ul>${again?`<div class="btns">${again}</div>`:''}`}
 const dots='<span class="typing"><i></i><i></i><i></i></span>';
@@ -1163,7 +1174,7 @@ $('seats').innerHTML=SEATS.map((s,i)=>`<div class="seat"><button type="button" c
 $('gruleset').innerHTML=ruleRows(DEF,k=>`id="r-${k}"`,false);
 $('seats').addEventListener('click',e=>{const b=e.target.closest('[data-tokseat]');if(!b)return;const i=+b.dataset.tokseat;seatTok[i]=(seatTok[i]+1)%TOK.length;b.innerHTML=I(TOK[seatTok[i]])});
 $('ruleset').innerHTML=RULES.map(r=>`<label class="sw"><span class="hic">${I(RIC[r[0]])}</span><div>${r[1]}<small>${r[2]}</small></div><input type="checkbox" id="r-${r[0]}" checked><span></span></label>`).join('');
-document.addEventListener('click',e=>{const o=e.target.closest('[data-open]');if(!o)return;const d=$('dlg-'+o.dataset.open);if(o.dataset.open==='rules')renderRules();if(o.dataset.open==='online')renderOnline();try{d.showModal()}catch(err){d.setAttribute('open','')}});
+document.addEventListener('click',e=>{const o=e.target.closest('[data-open]');if(!o)return;if(o.dataset.open==='online'&&inLobby()){hideHome();$('lobbyc').scrollIntoView({behavior:'smooth',block:'start'});return}const d=$('dlg-'+o.dataset.open);if(o.dataset.open==='rules')renderRules();if(o.dataset.open==='online')renderOnline();try{d.showModal()}catch(err){d.setAttribute('open','')}});
 document.querySelectorAll('dialog.sheet').forEach(d=>{const oc=d.close.bind(d),os=d.showModal.bind(d);
 d.close=v=>{if(d._ct)return;if(still||!d.open)return oc(v);d.classList.add('closing');d._ct=setTimeout(()=>{d._ct=0;d.classList.remove('closing');oc(v)},210)};
 d.showModal=()=>{if(d._ct){clearTimeout(d._ct);d._ct=0;d.classList.remove('closing');if(d.open)return}os()};
@@ -1229,7 +1240,7 @@ r.presence({uid:CAP.me}).catch(()=>{})}catch(e){}}
 renderOnline()}
 function onDoc(snap){const o=online;if(!snap.exists){if(inviteCode===o.code){inviteCode=null;homeMsg='That room has closed or the link is wrong. Ask your friend for a new invite.';leaveOnline(true);showHome();try{$('dlg-online').close()}catch(e){}return}if(o.loaded){leaveOnline(false);toastMsg('That room was closed.')}else{onlineMsg='No room with that code.';leaveOnline(false)}return}
 const d=snap.data();if(inviteCode===o.code){inviteCode=null;homeMsg='';hideHome();const seated=(d.seats||[]).some(x=>x&&x.uid===CAP.me);if(d.status==='lobby'||!d.state)setTimeout(()=>{if(online===o)openLobby()},0);else if(!seated)toastMsg('This game has already started, so you are watching.')}o.loaded=true;o.host=d.host;o.seats=d.seats||[];o.rules=Object.assign({},DEF,d.rules||KV);o.pub=!!d.pub;o.botfill=d.botfill!==false;o.status=d.status;o.lastAt=d.at||0;
-if(d.status==='lobby'||!d.state){if(o.playing){o.playing=false;gen++;busy=false;S=loadLocal();prevCash=[];$('players').innerHTML='';$('toks').innerHTML='';tileKeys=[];feedLn=-1;render(true)}o.rev=d.rev||0;renderOnline();return}
+if(d.status==='lobby'||!d.state){o.playing=false;o.rev=d.rev||0;lobbyBoard(o);renderOnline();return}
 if((d.rev||0)<=o.rev&&o.playing)return;o.rev=d.rev||0;
 if(!o.playing){o.playing=true;gen++;busy=false;clearTimeout(autoT);S=fixState(JSON.parse(JSON.stringify(d.state)));lastPushed=stripState(S);S.focus=S.players[S.cur].pos;seen=S.ln||0;prevCash=[];pp=-1;$('players').innerHTML='';$('toks').innerHTML='';tileKeys=[];feedLn=-1;try{$('dlg-online').close()}catch(e){}render(true);schedule();renderOnline();return}
 o.pending=fixState(JSON.parse(JSON.stringify(d.state)));if(!animating)playIncoming()}
@@ -1256,7 +1267,14 @@ function loadLocal(){try{const j=JSON.parse(localStorage.getItem('kvt-7')||'null
 const kindLabel={human:'Player',open:'Empty seat',bot:'Bot',empty:'Closed'};
 function seatToks(seats){const out=[],used=new Set();seats.forEach((x,i)=>{if(x&&x.kind!=='empty'&&x.tok!=null&&!used.has(x.tok%TOK.length)){out[i]=x.tok%TOK.length;used.add(out[i])}});
 seats.forEach((x,i)=>{if(out[i]!=null)return;let t=(x&&x.tok!=null?x.tok:i)%TOK.length;for(let k=0;k<TOK.length&&used.has(t);k++)t=(t+1)%TOK.length;out[i]=t;if(x&&x.kind!=='empty')used.add(t)});return out}
-function renderOnline(){renderChat();renderShare();const el=$('online');if(!el)return;const chip=$('ochip');
+function lobbyBoard(o){const list=o.seats.map((x,i)=>Object.assign({},x,{i})).filter(x=>x.kind==='human'||x.kind==='bot');if(!list.length)return;const tk=seatToks(o.seats);
+const g=newGame(list.map(x=>({name:x.nick||(x.kind==='bot'?SEATS[x.i].name:'Player'),bot:x.kind==='bot',uid:x.kind==='human'?x.uid:null,col:PC[x.i],tok:tk[x.i]})),o.rules);g.log=[];g.ln=0;g.lobby=1;
+gen++;busy=false;clearTimeout(autoT);S=fixState(g);S.focus=0;seen=0;prevCash=[];pp=-1;$('players').innerHTML='';$('toks').innerHTML='';tileKeys=[];feedLn=-1;render(true)}
+function inLobby(){return!!(online&&online.loaded&&!online.playing&&online.status==='lobby')}
+function placeLobby(){const el=$('online'),side=$('lobbyc'),dl=$('dlg-online');if(!el||!side||!dl)return;const on=inLobby(),was=document.body.classList.contains('inlobby');
+if(on){if(el.parentElement!==side)side.append(el);side.hidden=false;if(dl.open)dl.close()}else{if(el.parentElement!==dl)dl.append(el);side.hidden=true}
+document.body.classList.toggle('inlobby',on);if(on&&!was&&$('home').hidden&&matchMedia('(max-width:1000px)').matches)setTimeout(()=>side.scrollIntoView({behavior:'smooth',block:'start'}),250)}
+function renderOnline(){renderChat();renderShare();placeLobby();const el=$('online');if(!el)return;const chip=$('ochip');
 if($('opl'))$('opl').hidden=!!online||(CAP.ready&&(!CAP.db||!CAP.me));if(chip){chip.hidden=!online;if(online){const n=online.peers?online.peers.size:0;chip.innerHTML=`${I('globe')}<span></span>`;chip.lastChild.textContent=online.code.toUpperCase()+(n?` · ${n} online`:'')}}
 if(!CAP.ready){el.innerHTML=`<p class="note">Connecting…</p>`;return}
 if(!CAP.db||!CAP.me){el.innerHTML=`<div class="rule"><span class="hic">${I('info')}</span><h3>Online play isn't available here</h3><p>${window.claude&&window.claude.use?'Open this game on claude.ai while signed in. Friends need to be invited to it by email as <b>Editors</b> so their moves can be saved.':'This copy has no game server, so it can\'t host rooms. Open the online version of the game to play with friends.'} You can still play pass-and-play on this screen.</p></div>`;return}
@@ -1346,7 +1364,7 @@ $('hrooms').hidden=!CAP.list;$('hpriv').hidden=!net;$('hcont').hidden=!online;
 $('hnote').textContent=inviteCode?`Opening room ${inviteCode.toUpperCase()}…`:homeMsg?homeMsg:!CAP.ready?'Connecting to the game server…':net?(CAP.list?'Play drops you into an open public room, or opens a new one. Bots fill any empty seats.':'Play opens a room. Send friends the link, or start with bots.'):'Can’t reach the game server. Check your connection, then reload the page.';
 if(homeView==='rooms')renderRooms()}
 function homeNick(){homeMsg='';const inp=$('hnick'),v=inp.value.trim().slice(0,16);if(!v){toastMsg('Type a nickname first.');inp.focus();return''}try{localStorage.setItem('kvt-nick',v)}catch(e){}return v}
-const openLobby=()=>{renderOnline();try{$('dlg-online').showModal()}catch(e){}};
+const openLobby=()=>{renderOnline();if(inLobby()){if(matchMedia('(max-width:1000px)').matches)$('lobbyc').scrollIntoView({behavior:'smooth',block:'start'});return}try{$('dlg-online').showModal()}catch(e){}};
 async function loadRooms(){if(!CAP.list){roomList=[];renderRooms();return}$('rlist').innerHTML='<p class="note">Looking for rooms…</p>';try{roomList=(await CAP.list())||[]}catch(e){roomList=null}if(homeView==='rooms')renderRooms()}
 function renderRooms(){const FL=[['all','All'],['kv','House rules'],['classic','Classic'],['auction','Auctions'],['mort','Mortgages']];
 $('rfil').innerHTML=FL.map(([k,l])=>`<button type="button" data-rf="${k}" aria-pressed="${roomF===k}">${l}</button>`).join('');

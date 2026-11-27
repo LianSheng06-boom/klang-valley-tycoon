@@ -8,6 +8,7 @@ Everything is played online through the game server (`server.js`). See **Online 
 
 - The home page has **Play** (jump into an open public room, or open one), **All rooms** (browse public rooms by rules), and **Create a private game**.
 - 2–6 players in an online room. The player list starts with just the host; friends who open the invite link press **Join game** and appear in it, and the host can **Add bot** (or remove a player or bot) before starting, so you can also play alone against bots. Tap your token to change it; no two players share one.
+- While a room waits to start, its settings sit in the right column (below the board on a phone) and the board shows everyone on Mula, so you can look around the places while friends join.
 - Roll the 3D dice, buy the places you land on, collect full colour sets and build houses, then condos.
 - Skip a place and it goes to **auction**: everyone bids in turn, and passing drops you out. Online, a bidder who walks away is passed after 20 seconds.
 - **Mortgage** a place for half its price (no rent until you pay it back plus 10%), and sell houses back at half price. Open a place's card on your turn to find these buttons.
