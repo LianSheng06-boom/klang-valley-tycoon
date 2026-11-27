@@ -481,6 +481,20 @@ body.inlobby #sharec,body.inlobby #myprops,body.inlobby #trades,body.inlobby .si
 .lobbyhud .hic{width:44px;height:44px;border-radius:12px;background:var(--acc-soft);color:var(--acc);display:grid;place-items:center}
 .lobbyhud .lhint{display:flex;align-items:center;gap:5px;font-size:12px}.lobbyhud .lhint svg.i{width:13px;height:13px}.hud:has(.lobbyhud) .deed{margin-top:0}
 .lobbyhud b{font-size:17px}.lobbyhud small{color:var(--mute);font-size:13px}
+/* invite + join */
+.inv{display:grid;gap:10px;background:var(--tile);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.invh{display:flex;align-items:center;justify-content:space-between;gap:10px}.invh small{color:var(--mute);font-weight:600;font-size:13px}
+.invcode{font:700 14px/1 'Plus Jakarta Sans',system-ui,sans-serif;letter-spacing:.2em;padding:6px 6px 6px 9px;border-radius:8px;background:var(--acc-soft);color:var(--acc)}
+.invl{display:grid;gap:8px}
+.invl .lnk{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;word-break:normal;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--mute);user-select:all}
+.invl .b{justify-content:center}
+.joinc{display:grid;gap:4px;background:var(--acc-soft);border:1.5px solid var(--acc);border-radius:16px;padding:14px;animation:joinPulse 2s ease-in-out 3}
+.joinc b{font-size:16px}.joinc>small{color:var(--mute);font-size:13px}.joinc .addrow{border:0;margin:6px 0 0;padding:0}
+@keyframes joinPulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--acc) 22%,transparent)}}
+.seat.newseat{animation:seatIn .6s cubic-bezier(.3,1.3,.5,1) both;border-radius:12px}
+@keyframes seatIn{0%{opacity:0;transform:translateY(-8px) scale(.97)}40%{opacity:1;background:var(--acc-soft)}100%{background:transparent}}
+#lobbyc:not([hidden]){animation:hudIn .4s cubic-bezier(.3,.8,.35,1) both}
+.side>section{animation:hudIn .4s cubic-bezier(.3,.8,.35,1) both}.side>section:nth-child(2){animation-delay:.04s}.side>section:nth-child(3){animation-delay:.08s}.side>section:nth-child(4){animation-delay:.12s}.side>section:nth-child(5){animation-delay:.16s}.side>section:nth-child(6){animation-delay:.2s}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -976,12 +990,13 @@ function hideHover(){hoverI=null;$('hovercard').classList.remove('show')}
 let deedOpen=false;
 const showDeed=()=>deedOpen||(mine()&&!P(S).bot&&(S.phase==='buy'||S.phase==='offer'||(rolled&&!busy)));
 function placeTokens(snap){const L=$('toks'),st=$('stage').getBoundingClientRect();if(snap)L.classList.add('snap');
-S.players.forEach((p,k)=>{let el=L.children[k];if(!el){el=document.createElement('span');el.className='tok';L.appendChild(el)}const tk=tokOf(k);if(el.dataset.tk!==tk){el.dataset.tk=tk;el.innerHTML=I(tk)}
+S.players.forEach((p,k)=>{let el=L.children[k];if(!el){el=document.createElement('span');el.className='tok';el._new=1;el.style.transition='none';L.appendChild(el)}const tk=tokOf(k);if(el.dataset.tk!==tk){el.dataset.tk=tk;el.innerHTML=I(tk)}
 el.style.setProperty('--p',p.col);el.style.display=p.out?'none':'';el.classList.toggle('me',k===S.cur&&!S.over);
 const te=$('board').querySelector(`[data-i="${p.pos}"]`);if(!te)return;const r=te.getBoundingClientRect();
 const same=S.players.map((q,j)=>j).filter(j=>!S.players[j].out&&S.players[j].pos===p.pos),n=same.length,ix=same.indexOf(k);
 const off=n>4?[[-1.1,-1],[0,-1],[1.1,-1],[-1.1,1],[0,1],[1.1,1]][ix]:n>1?[[-1,-1],[1,-1],[-1,1],[1,1]][ix]:[0,0],d=Math.min(r.width,r.height)*(n>4?.17:.2);
-el.style.transform=`translate(${(r.left-st.left+r.width/2+off[0]*d).toFixed(1)}px,${(r.top-st.top+r.height/2+off[1]*d).toFixed(1)}px) translate(-50%,-50%)`});
+el.style.transform=`translate(${(r.left-st.left+r.width/2+off[0]*d).toFixed(1)}px,${(r.top-st.top+r.height/2+off[1]*d).toFixed(1)}px) translate(-50%,-50%)`;
+if(el._new){el._new=0;requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.transition=''}));if(!still&&el.animate)el.animate([{scale:0,opacity:0},{scale:1,opacity:1}],{duration:460,delay:120,easing:'cubic-bezier(.3,1.6,.5,1)',fill:'backwards'})}});
 while(L.children.length>S.players.length)L.lastChild.remove();
 if(snap)requestAnimationFrame(()=>requestAnimationFrame(()=>L.classList.remove('snap')))}
 function tokAt(i){const st=$('stage').getBoundingClientRect(),te=$('board').querySelector(`[data-i="${i}"]`);if(!te)return null;const r=te.getBoundingClientRect();return[r.left-st.left+r.width/2,r.top-st.top+r.height/2,Math.min(r.width,r.height)]}
@@ -1242,7 +1257,7 @@ function onDoc(snap){const o=online;if(!snap.exists){if(inviteCode===o.code){inv
 const d=snap.data();if(inviteCode===o.code){inviteCode=null;homeMsg='';hideHome();const seated=(d.seats||[]).some(x=>x&&x.uid===CAP.me);if(d.status==='lobby'||!d.state)setTimeout(()=>{if(online===o)openLobby()},0);else if(!seated)toastMsg('This game has already started, so you are watching.')}o.loaded=true;o.host=d.host;o.seats=d.seats||[];o.rules=Object.assign({},DEF,d.rules||KV);o.pub=!!d.pub;o.botfill=d.botfill!==false;o.status=d.status;o.lastAt=d.at||0;
 if(d.status==='lobby'||!d.state){o.playing=false;o.rev=d.rev||0;lobbyBoard(o);renderOnline();return}
 if((d.rev||0)<=o.rev&&o.playing)return;o.rev=d.rev||0;
-if(!o.playing){o.playing=true;gen++;busy=false;clearTimeout(autoT);S=fixState(JSON.parse(JSON.stringify(d.state)));lastPushed=stripState(S);S.focus=S.players[S.cur].pos;seen=S.ln||0;prevCash=[];pp=-1;$('players').innerHTML='';$('toks').innerHTML='';tileKeys=[];feedLn=-1;try{$('dlg-online').close()}catch(e){}render(true);schedule();renderOnline();return}
+if(!o.playing){if(o._keys){const st0=d.state,f=st0&&st0.players&&st0.players[st0.cur];if(f)setTimeout(()=>toastMsg(`Game on! ${f.uid===CAP.me?'You go':f.name+' goes'} first.`),350)}o._keys=null;o.playing=true;gen++;busy=false;clearTimeout(autoT);S=fixState(JSON.parse(JSON.stringify(d.state)));lastPushed=stripState(S);S.focus=S.players[S.cur].pos;seen=S.ln||0;prevCash=[];pp=-1;$('players').innerHTML='';$('toks').innerHTML='';tileKeys=[];feedLn=-1;try{$('dlg-online').close()}catch(e){}render(true);schedule();renderOnline();return}
 o.pending=fixState(JSON.parse(JSON.stringify(d.state)));if(!animating)playIncoming()}
 async function playIncoming(){animating=true;const o=online;
 while(online===o&&o.pending){const ns=o.pending;o.pending=null;const g=gen,old=S;lastPushed=stripState(ns);
@@ -1269,7 +1284,7 @@ function seatToks(seats){const out=[],used=new Set();seats.forEach((x,i)=>{if(x&
 seats.forEach((x,i)=>{if(out[i]!=null)return;let t=(x&&x.tok!=null?x.tok:i)%TOK.length;for(let k=0;k<TOK.length&&used.has(t);k++)t=(t+1)%TOK.length;out[i]=t;if(x&&x.kind!=='empty')used.add(t)});return out}
 function lobbyBoard(o){const list=o.seats.map((x,i)=>Object.assign({},x,{i})).filter(x=>x.kind==='human'||x.kind==='bot');if(!list.length)return;const tk=seatToks(o.seats);
 const g=newGame(list.map(x=>({name:x.nick||(x.kind==='bot'?SEATS[x.i].name:'Player'),bot:x.kind==='bot',uid:x.kind==='human'?x.uid:null,col:PC[x.i],tok:tk[x.i]})),o.rules);g.log=[];g.ln=0;g.lobby=1;
-gen++;busy=false;clearTimeout(autoT);S=fixState(g);S.focus=0;seen=0;prevCash=[];pp=-1;$('players').innerHTML='';$('toks').innerHTML='';tileKeys=[];feedLn=-1;render(true)}
+gen++;busy=false;clearTimeout(autoT);const was=S&&S.lobby;S=fixState(g);S.focus=0;seen=0;prevCash=[];pp=-1;$('players').innerHTML='';if(!was){$('toks').innerHTML='';tileKeys=[]}feedLn=-1;render(!was)}
 function inLobby(){return!!(online&&online.loaded&&!online.playing&&online.status==='lobby')}
 function placeLobby(){const el=$('online'),side=$('lobbyc'),dl=$('dlg-online');if(!el||!side||!dl)return;const on=inLobby(),was=document.body.classList.contains('inlobby');
 if(on){if(el.parentElement!==side)side.append(el);side.hidden=false;if(dl.open)dl.close()}else{if(el.parentElement!==dl)dl.append(el);side.hidden=true}
@@ -1285,22 +1300,28 @@ if(!online){el.innerHTML=`${onlineMsg?`<p class="note" style="color:var(--bad)" 
 if(onlineMsg)$('omsg').textContent=onlineMsg;try{$('onick').value=localStorage.getItem('kvt-nick')||''}catch(e){}return}
 const o=online,host=o.host===CAP.me,link=shareURL()+'#g-'+o.code;
 if(!o.loaded){el.innerHTML=`<p class="note">Opening room…</p>`;return}
-const stk=seatToks(o.seats);const seatRow=(s,i)=>{const here=s.uid&&o.peers&&o.peers.has(s.uid);const me=s.uid===CAP.me,tk=TOK[stk[i]];return`<div class="seat">${me&&o.status==='lobby'?`<button type="button" class="av tokb" data-tok="${i}" style="--p:${PC[i]}" aria-label="Change your token" title="Change token">${I(tk)}</button>`:`<span class="av" style="--p:${PC[i]}">${I(tk)}</span>`}<span class="snm"><span class="sn" data-n="${i}"></span><small>${s.kind==='human'?(o.peers?(here?'<i class="live"></i>online':'offline'):'Player'):s.kind==='open'?(o.botfill?'A friend can join, or a bot plays':'A friend can join'):s.kind==='empty'?'No one sits here':kindLabel[s.kind]}${me?' · you':''}${s.uid===o.host?' · host':''}</small></span>${host&&o.status==='lobby'&&!me?`<button class="b sm" data-seat="${i}">Remove</button>`:''}</div>`};
-const keepN=($('ositnick')||{}).value;el.innerHTML=`<div class="code"><small>Room code</small><b>${o.code.toUpperCase()}</b><button class="b sm" id="ocopy">${I('card')}Copy invite</button></div>
-<p class="note">Send friends this link and code: <span class="lnk"></span></p>
-<section class="card">${o.seats.map((s,i)=>s.kind==='human'||s.kind==='bot'?seatRow(s,i):'').join('')}${o.status==='lobby'?(()=>{const n=o.seats.filter(x=>x.kind==='human'||x.kind==='bot').length,free=o.seats.some(x=>x.kind==='open'||x.kind==='empty');return`<div class="addrow"><small>${n} of ${o.seats.length} players${free?' · friends who open the invite appear here':' · room is full'}</small>${host&&free?`<button class="b sm" id="oaddbot">${I('bot')}Add bot</button>`:''}</div>${!o.seats.some(x=>x.uid===CAP.me)&&o.seats.some(x=>x.kind==='open')?`<div class="addrow"><input id="ositnick" maxlength="16" autocomplete="nickname" placeholder="Your nickname" aria-label="Your nickname"><button class="b sm p" id="osit">${I('play')}Join game</button></div>`:''}`})():''}</section>
+const stk=seatToks(o.seats);const seatRow=(s,i)=>{const here=s.uid&&o.peers&&o.peers.has(s.uid);const me=s.uid===CAP.me,tk=TOK[stk[i]];const ft=o._fresh&&keys[i]&&o._fresh[keys[i]],fa=ft?Date.now()-ft:1e9;return`<div class="seat${fa<650?' newseat':''}"${fa<650?` style="animation-delay:-${fa}ms"`:''}>${me&&o.status==='lobby'?`<button type="button" class="av tokb" data-tok="${i}" style="--p:${PC[i]}" aria-label="Change your token" title="Change token">${I(tk)}</button>`:`<span class="av" style="--p:${PC[i]}">${I(tk)}</span>`}<span class="snm"><span class="sn" data-n="${i}"></span><small>${s.kind==='human'?(o.peers?(here?'<i class="live"></i>online':'offline'):'Player'):s.kind==='open'?(o.botfill?'A friend can join, or a bot plays':'A friend can join'):s.kind==='empty'?'No one sits here':kindLabel[s.kind]}${me?' · you':''}${s.uid===o.host?' · host':''}</small></span>${host&&o.status==='lobby'&&!me?`<button class="b sm" data-seat="${i}">Remove</button>`:''}</div>`};
+const keepN=($('ositnick')||{}).value;const seatedMe=o.seats.some(x=>x.uid===CAP.me),canJoin=o.status==='lobby'&&!seatedMe&&o.seats.some(x=>x.kind==='open'),hostNick=((o.seats.find(x=>x.uid===o.host)||{}).nick||'');
+const keys=o.seats.map((x,i)=>x.kind==='human'?'h:'+x.uid:x.kind==='bot'?'b:'+i:null),fresh=new Set();
+if(o.status==='lobby'){if(o._keys){const old=new Set(o._keys.filter(Boolean));keys.forEach((k,i)=>{if(k&&!old.has(k)){(o._fresh=o._fresh||{})[k]=Date.now();const x=o.seats[i];if(x.kind==='human'){if(x.uid===CAP.me)toastMsg(o.host===CAP.me?'Room ready.':`You're in! Waiting for ${hostNick||'the host'} to start.`);else toastMsg(`${x.nick||'A friend'} joined the room.`)}}});
+const now=new Set(keys.filter(Boolean));o._keys.forEach(k=>{if(k&&k[0]==='h'&&!now.has(k)&&k!=='h:'+CAP.me){const nk=(o._nicks||{})[k];toastMsg(`${nk||'A player'} left the room.`)}})}
+o._keys=keys;o._nicks={};o.seats.forEach((x,i)=>{if(keys[i])o._nicks[keys[i]]=x.nick})}
+el.innerHTML=`${canJoin?`<div class="joinc"><b>Join ${hostNick?esc(hostNick)+'\'s':'this'} game</b><small>Pick a nickname to take a seat.</small><div class="addrow"><input id="ositnick" maxlength="16" autocomplete="nickname" placeholder="Your nickname" aria-label="Your nickname"><button class="b sm p" id="osit">${I('play')}Join game</button></div></div>`:''}<div class="inv"><div class="invh"><small>Invite friends</small><span class="invcode" title="Room code">${o.code.toUpperCase()}</span></div><div class="invl"><span class="lnk"></span><button class="b sm${seatedMe?' p':''}" id="ocopy">${I('card')}${navigator.share&&matchMedia('(pointer:coarse)').matches?'Share':'Copy link'}</button></div></div>
+<section class="card">${o.seats.map((s,i)=>s.kind==='human'||s.kind==='bot'?seatRow(s,i):'').join('')}${o.status==='lobby'?(()=>{const n=o.seats.filter(x=>x.kind==='human'||x.kind==='bot').length,free=o.seats.some(x=>x.kind==='open'||x.kind==='empty');return`<div class="addrow"><small>${n} of ${o.seats.length} players${free?' · friends who open the invite appear here':' · room is full'}</small>${host&&free?`<button class="b sm" id="oaddbot">${I('bot')}Add bot</button>`:''}</div>`})():''}</section>
 ${o.status==='lobby'?`<section class="card"><h3 class="ch">Room</h3><label class="sw"><span class="hic">${I('globe')}</span><div>Public room<small>${CAP.list?'Shown under All rooms so anyone can join.':'Anyone with the code can join.'}</small></div><input type="checkbox" data-pub${o.pub?' checked':''}${host&&CAP.list?'':' disabled'}><span></span></label></section>
 <section class="card"><h3 class="ch">Game rules${host?'':' (set by the host)'}</h3>${ruleRows(o.rules,k=>`data-rule="${k}"`,!host)}</section>
 <details class="card rdet"><summary>Klang Valley house rules</summary>${RULES.map(r=>`<label class="sw"><span class="hic">${I(RIC[r[0]])}</span><div>${r[1]}<small>${r[2]}</small></div><input type="checkbox" data-rule="${r[0]}"${o.rules[r[0]]?' checked':''}${host?'':' disabled'}><span></span></label>`).join('')}</details>
 ${host?`<div class="btns"><button class="b p" id="ostart">${I('dice')}Start game</button><button class="b" id="oleave">${I('x')}Close room</button></div>`:`<p class="note">Waiting for the host to start…</p><div class="btns"><button class="b" id="oleave">${I('x')}Leave room</button></div>`}`
 :`<div class="btns">${host&&S&&S.over?`<button class="b p" id="olobby">${I('dice')}New round</button>`:''}<button class="b" id="oleave">${I('x')}Leave room</button></div>`}`;
-el.querySelector('.lnk').textContent=link;{const sn=el.querySelector('#ositnick');if(sn)try{sn.value=keepN!=null?keepN:(localStorage.getItem('kvt-nick')||'')}catch(_){}}el.querySelectorAll('.sn').forEach(n=>{const s=o.seats[+n.dataset.n];n.textContent=s.kind==='human'?(s.nick||'Player'):s.kind==='bot'?(s.nick||'Bot'):kindLabel[s.kind]})}
+el.querySelector('.lnk').textContent=link.replace(/^https?:\/\//,'');{const sn=el.querySelector('#ositnick');if(sn)try{sn.value=keepN!=null?keepN:(localStorage.getItem('kvt-nick')||'')}catch(_){}}el.querySelectorAll('.sn').forEach(n=>{const s=o.seats[+n.dataset.n];n.textContent=s.kind==='human'?(s.nick||'Player'):s.kind==='bot'?(s.nick||'Bot'):kindLabel[s.kind]})}
 document.addEventListener('click',async e=>{const t=e.target.closest('button,input');if(!t||!t.closest('#online'))return;
 const nick=()=>{const v=(($('onick')||{}).value||'').trim().slice(0,16);try{localStorage.setItem('kvt-nick',v)}catch(_){}return v};
 if(t.id==='ocreate'){const n=nick();if(!n){toastMsg('Type a nickname first.');$('onick').focus();return}onlineMsg='';t.disabled=true;try{await createRoom(n)}catch(err){onlineMsg=err&&err.code==='invalid_argument'?'You need Editor access to this game to host. Ask the owner to invite you.':'Could not create the room. Try again.';renderOnline()}}
 else if(t.id==='ojoin'){const n=nick(),c=(($('ocode')||{}).value||'').trim().toLowerCase();if(!n){toastMsg('Type a nickname first.');return}if(!/^[a-z0-9]{5}$/.test(c)){toastMsg('Room codes are 5 letters or numbers.');return}onlineMsg='';t.disabled=true;
 try{await joinRoom(c,n)}catch(err){onlineMsg=err&&err.code==='missing'?'No room with that code.':err&&err.code==='invalid_argument'?'You need Editor access to this game to join. Ask the owner to invite you.':err&&err.code==='offline'?'Lost the connection. Try again in a moment.':'Could not join right now. Try again.';renderOnline()}}
-else if(t.id==='ocopy'){const txt=`Jom main Klang Valley Tycoon! Open ${shareURL()}#g-${online.code} — room code ${online.code.toUpperCase()}`;try{await navigator.clipboard.writeText(txt);toastMsg('Invite copied.')}catch(err){toastMsg('Copy the link shown below the code.')}}
+else if(t.id==='ocopy'){const url=`${shareURL()}#g-${online.code}`,txt=`Jom main Klang Valley Tycoon! Open ${url} — room code ${online.code.toUpperCase()}`;
+if(navigator.share&&matchMedia('(pointer:coarse)').matches){try{await navigator.share({title:'Klang Valley Tycoon',text:`Jom main Klang Valley Tycoon! Room code ${online.code.toUpperCase()}`,url});return}catch(err){if(err&&err.name==='AbortError')return}}
+try{await navigator.clipboard.writeText(txt);toastMsg('Invite link copied. Paste it to your friends.')}catch(err){toastMsg('Copy the link from the box.')}}
 else if(t.id==='ostart')startOnline();
 else if(t.id==='oleave'){if(online&&online.host===CAP.me&&online.status==='lobby'){const r=online.ref;await leaveOnline(false);try{await r.delete()}catch(_){}}else await leaveOnline(false);try{$('dlg-online').close()}catch(_){}}
 else if(t.id==='olobby')backToLobby();
