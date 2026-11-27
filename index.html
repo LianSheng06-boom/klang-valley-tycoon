@@ -467,6 +467,11 @@ button.brand{border:0;background:none;padding:0;cursor:pointer;text-align:left;c
 .mpsum{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 4px 10px}
 @media(max-width:640px){#sharec{order:1}}
 @media(min-width:1001px){.stage{max-width:min(790px,calc(100dvh - 112px))}main{padding-top:16px;padding-bottom:16px}}
+/* bought places take the owner's colour */
+.tile.ow{background:color-mix(in srgb,var(--o) 22%,var(--tile))!important;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--o) 70%,transparent)!important}
+.tile.ow.on,.tile.ow.can{box-shadow:inset 0 0 0 2.5px var(--acc)!important}
+.tile.ow:hover{background:color-mix(in srgb,var(--o) 32%,var(--tile))!important}
+.tile.ow .cap{flex-basis:16%!important}.tile.ow.sl .cap,.tile.ow.sr2 .cap{flex-basis:13%!important}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -887,10 +892,11 @@ function tileHTML(i){const t=T[i],[r,c]=rc(i),sd=side(i),o=S.own[i],b=S.bld[i]||
 const cls=['tile',sd];if(S.mort[i])cls.push('mort');
 let inner;
 if(sd==='cn'){const[k,col]=CK[t.t];return`<button class="${cls.join(' ')}" style="grid-area:${r}/${c};--k:${col};--g:${col}" data-i="${i}" aria-label="${esc(t.n)}"><span class="tx">${I(k).replace('class="i"','class="i ti"')}<span class="nm">${esc(t.n)}</span></span></button>`}
-const cap=t.t==='p'?`<span class="cap" style="--g:${GC[t.g]}">${b===5?'<i class="c"></i>':'<i></i>'.repeat(b)}</span>`:t.t==='rail'||t.t==='util'?`<span class="cap" style="--g:${tColor(t)}"></span>`:'';
+const oc=o!==undefined?S.players[o].col:null;if(oc)cls.push('ow');
+const cap=oc&&(t.t==='p'||t.t==='rail'||t.t==='util')?`<span class="cap" style="--g:${oc}">${t.t==='p'?(b===5?'<i class="c"></i>':'<i></i>'.repeat(b)):''}</span>`:'';
 const ic=symOf(i);
-inner=`${cap}<span class="tx">${ic?`<span class="sy" style="color:${tColor(t)}">${I(ic).replace('class="i"','class="i ti"')}</span>`:''}<span class="nm">${esc(t.n)}</span>${t.c?`<span class="pr">${RM(t.c)}</span>`:''}</span>${o!==undefined?`<span class="own" style="--o:${S.players[o].col}"></span>`:''}`;
-return`<button class="${cls.join(' ')}" style="grid-area:${r}/${c}" data-i="${i}" aria-label="${esc(t.n)}${o!==undefined?', owned by '+esc(S.players[o].name):''}${S.mort[i]?', mortgaged':''}">${inner}</button>`}
+inner=`${cap}<span class="tx">${ic?`<span class="sy" style="color:${tColor(t)}">${I(ic).replace('class="i"','class="i ti"')}</span>`:''}<span class="nm">${esc(t.n)}</span>${t.c?`<span class="pr">${RM(t.c)}</span>`:''}</span>`;
+return`<button class="${cls.join(' ')}" style="grid-area:${r}/${c}${oc?';--o:'+oc:''}" data-i="${i}" aria-label="${esc(t.n)}${o!==undefined?', owned by '+esc(S.players[o].name):''}${S.mort[i]?', mortgaged':''}">${inner}</button>`}
 const PIPS=[[],[4],[0,8],[0,4,8],[0,2,6,8],[0,2,4,6,8],[0,2,3,5,6,8]];
 const die=n=>`<span class="die" role="img" aria-label="${n}">${[...Array(9)].map((_,k)=>`<b class="${PIPS[n].includes(k)?'k':''}"></b>`).join('')}</span>`;
 function deedHTML(i){const t=T[i],o=S.own[i],g=tColor(t),has=o!==undefined;let body='',foot='';
