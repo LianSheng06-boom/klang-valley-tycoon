@@ -9,6 +9,8 @@ A property-trading board game set in the Klang Valley, from Kajang satay to the 
 - 2–4 players on one screen (pass-and-play), with bots filling the empty seats.
 - Roll the 3D dice, buy the places you land on, collect full colour sets and build houses, then condos.
 - Point at a tile to see its card. On a phone, tap it.
+- Trade on your turn: Trades → Create, pick a player, tap places and set cash on each side. Bots answer straight away; friends get an Accept / Decline pop-up.
+- Online rooms have a chat. Anyone who joins late sees the recent messages.
 - Highest net worth after 20 rounds wins.
 
 ## House rules that stop the bankruptcy spiral

@@ -34,6 +34,7 @@ const docs = new Map();   // path -> { data, at }
 const leases = new Map(); // path -> { holder, until }
 const subs = new Map();   // path -> Set<ws>
 const rooms = new Map();  // room -> Map<ws, presence>
+const chats = new Map();  // room -> { list: last 50 messages, at }
 
 const snap = p => { const d = docs.get(p); return d ? { exists: true, data: d.data } : { exists: false }; };
 const tell = (ws, m) => { if (ws.readyState === 1) ws.send(JSON.stringify(m)); };
@@ -47,6 +48,7 @@ function pushDoc(p) {
 function sweep(force) {
   const now = Date.now(), watched = p => (subs.get(p) || { size: 0 }).size > 0;
   for (const [p, d] of docs) if (now - d.at > IDLE_MS && !watched(p)) docs.delete(p);
+  for (const [r, c] of chats) if (now - c.at > IDLE_MS && !rooms.has(r)) chats.delete(r);
   if (force && docs.size >= MAX_DOCS) {
     [...docs].filter(([p]) => !watched(p)).sort((a, b) => a[1].at - b[1].at).slice(0, 50).forEach(([p]) => docs.delete(p));
   }
@@ -121,14 +123,29 @@ wss.on('connection', ws => {
         case 'join': {
           if (!rooms.has(m.room)) rooms.set(m.room, new Map());
           rooms.get(m.room).set(ws, m.presence || null); ws.rooms.add(m.room); peers(m.room);
-          return reply(true);
+          reply(true);
+          // recent chat for whoever just arrived
+          for (const c of (chats.get(m.room) || { list: [] }).list) tell(ws, { t: 'msg', room: m.room, name: 'chat', data: c, by: c.uid });
+          return;
         }
         case 'presence': { const r = rooms.get(m.room); if (r && r.has(ws)) { r.set(ws, m.presence || null); peers(m.room); } return reply(true); }
         case 'leave': leaveRoom(ws, m.room); return reply(true);
         case 'emit': {
           const r = rooms.get(m.room);
           if (r && r.has(ws)) {
-            const msg = JSON.stringify({ t: 'msg', room: m.room, name: String(m.name), data: m.data, by: ws.uid });
+            let data = m.data;
+            if (m.name === 'chat') {
+              const now = Date.now();
+              ws.chatT = (ws.chatT || []).filter(t => now - t < 10000);
+              if (ws.chatT.length >= 6) return reply(null, 'slow');
+              ws.chatT.push(now);
+              const d = m.data || {}, text = String(d.text || '').trim().slice(0, 200);
+              if (!text) return reply(null, 'invalid_argument');
+              data = { id: String(d.id || ws.uid + now).slice(0, 64), uid: ws.uid, nick: String(d.nick || 'Player').slice(0, 16), text, at: now };
+              const c = chats.get(m.room) || { list: [], at: 0 };
+              c.list.push(data); if (c.list.length > 50) c.list.shift(); c.at = now; chats.set(m.room, c);
+            }
+            const msg = JSON.stringify({ t: 'msg', room: m.room, name: String(m.name), data, by: ws.uid });
             for (const w of r.keys()) if (w !== ws && w.readyState === 1) w.send(msg);
           }
           return reply(true);
